@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { v4 as uuidv4 } from 'uuid'
+import { ai, TEXT_MODEL } from '@/lib/ai'
 import { SYSTEM_GENERATE, SYSTEM_CONTENT } from '@/lib/prompts'
 import { createSession } from '@/lib/store'
 import type { CharacterSpec, ContentPost } from '@/lib/types'
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,8 +14,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate character spec
-    const charResponse = await openai.chat.completions.create({
-      model: 'gpt-4o',
+    const charResponse = await ai.chat.completions.create({
+      model: TEXT_MODEL,
       messages: [
         { role: 'system', content: SYSTEM_GENERATE },
         { role: 'user', content: concept },
@@ -33,7 +31,6 @@ export async function POST(req: NextRequest) {
 
     let parsed: Omit<CharacterSpec, 'id' | 'createdAt'>
     try {
-      // Strip markdown code fences if present
       const cleaned = raw.replace(/^```json?\s*\n?/i, '').replace(/\n?```\s*$/i, '')
       parsed = JSON.parse(cleaned)
     } catch {
@@ -47,8 +44,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate initial content feed in parallel
-    const contentPromise = openai.chat.completions.create({
-      model: 'gpt-4o',
+    const contentPromise = ai.chat.completions.create({
+      model: TEXT_MODEL,
       messages: [
         { role: 'system', content: SYSTEM_CONTENT(character) },
         { role: 'user', content: 'Generate your first batch of posts for launch day.' },
@@ -59,7 +56,6 @@ export async function POST(req: NextRequest) {
 
     const session = createSession(character)
 
-    // Wait for content
     try {
       const contentResponse = await contentPromise
       const contentRaw = contentResponse.choices[0]?.message?.content?.trim()

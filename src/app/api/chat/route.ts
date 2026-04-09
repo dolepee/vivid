@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { ai, TEXT_MODEL } from '@/lib/ai'
 import { SYSTEM_CHAT } from '@/lib/prompts'
 import { getSession, addChatMessage } from '@/lib/store'
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+import type OpenAI from 'openai'
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,8 +29,8 @@ export async function POST(req: NextRequest) {
       })),
     ]
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+    const response = await ai.chat.completions.create({
+      model: TEXT_MODEL,
       messages,
       temperature: 0.9,
       max_tokens: 300,
