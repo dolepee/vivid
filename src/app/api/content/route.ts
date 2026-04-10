@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ai, TEXT_MODEL } from '@/lib/ai'
 import { SYSTEM_CONTENT } from '@/lib/prompts'
 import { getSession, addContentPosts } from '@/lib/store'
-import type { ContentPost } from '@/lib/types'
+import { parseContentPosts } from '@/lib/schemas'
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'memeId required' }, { status: 400 })
     }
 
-    const session = getSession(memeId)
+    const session = await getSession(memeId)
     if (!session) {
       return NextResponse.json({ error: 'Meme not found' }, { status: 404 })
     }
@@ -31,17 +31,22 @@ export async function POST(req: NextRequest) {
 
     const raw = response.choices[0]?.message?.content?.trim()
     if (!raw) {
-      return NextResponse.json({ error: 'Empty response' }, { status: 500 })
+      return NextResponse.json({ error: 'Empty response from AI' }, { status: 502 })
     }
 
-    const cleaned = raw.replace(/^```json?\s*\n?/i, '').replace(/\n?```\s*$/i, '')
-    const posts = JSON.parse(cleaned) as ContentPost[]
+    let posts
+    try {
+      posts = parseContentPosts(raw)
+    } catch {
+      return NextResponse.json({ error: 'AI returned invalid content. Try again.' }, { status: 502 })
+    }
+
     const timestamped = posts.map(p => ({
       ...p,
       createdAt: new Date().toISOString(),
     }))
 
-    addContentPosts(memeId, timestamped)
+    await addContentPosts(memeId, timestamped)
 
     return NextResponse.json({ posts: timestamped })
   } catch (e) {

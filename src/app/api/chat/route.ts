@@ -12,14 +12,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'memeId and message required' }, { status: 400 })
     }
 
-    const session = getSession(memeId)
+    const session = await getSession(memeId)
     if (!session) {
       return NextResponse.json({ error: 'Meme not found' }, { status: 404 })
     }
 
     const { character } = session
 
-    addChatMessage(memeId, { role: 'user', content: message })
+    await addChatMessage(memeId, { role: 'user', content: message })
 
     const messages: OpenAI.ChatCompletionMessageParam[] = [
       { role: 'system', content: SYSTEM_CHAT(character) },
@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
         role: m.role as 'user' | 'assistant',
         content: m.content,
       })),
+      { role: 'user' as const, content: message },
     ]
 
     const response = await ai.chat.completions.create({
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
     })
 
     const reply = response.choices[0]?.message?.content?.trim() || '...'
-    addChatMessage(memeId, { role: 'assistant', content: reply })
+    await addChatMessage(memeId, { role: 'assistant', content: reply })
 
     return NextResponse.json({ reply })
   } catch (e) {

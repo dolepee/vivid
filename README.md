@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VIVID
 
-## Getting Started
+AI character engine for meme launches on Four.meme. Type a concept, get a living meme with personality, lore, visuals, voice, and a launch kit.
 
-First, run the development server:
+**Live:** [vividmeme.vercel.app](https://vividmeme.vercel.app)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## What it does
+
+VIVID turns a one line concept into a complete, consistent meme character:
+
+1. **Identity** - name, ticker, origin story, vibe, tone, speech pattern, worldview, signature lines, taboo topics
+2. **Voice** - live chat with the character; it stays in persona across conversations
+3. **Visuals** - 3 AI generated meme images matching the character's visual style
+4. **Content** - social media posts written in the character's voice, ready to copy
+5. **Launch Kit** - name, ticker, description, and launch copy formatted for Four.meme's create flow
+
+The core insight: every output (lore, chat replies, images, tweets, launch copy) is driven by one canonical character spec. This makes the character feel coherent across every surface, not randomly generated.
+
+## Architecture
+
+```
+Next.js 16 App Router
+  |
+  +-- /api/generate    CharacterSpec + content feed (Bankr / DeepSeek V3.2)
+  +-- /api/chat         In-character conversation (Bankr / DeepSeek V3.2)
+  +-- /api/content      Generate more social posts on demand
+  +-- /api/images       3 meme images (Pollinations.ai, free)
+  +-- /api/session      Session retrieval
+  |
+  +-- Upstash Redis     Durable session persistence (Vercel KV)
+  +-- Zod               Schema validation on all AI outputs
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **AI:** Bankr LLM Gateway routing to DeepSeek V3.2 (~$0.0008 per full generation)
+- **Images:** Pollinations.ai (free, no API key, seed-based variation)
+- **Storage:** Upstash Redis via Vercel KV integration (sessions persist across deploys)
+- **Validation:** Zod schemas on CharacterSpec and ContentPost; malformed AI output triggers retry, then clean error
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Local setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+git clone https://github.com/dolepee/vivid.git
+cd vivid
+npm install
+cp .env.local.example .env.local
+# Fill in your Bankr LLM key and Upstash Redis credentials
+npm run dev
+```
 
-## Learn More
+## Demo flow
 
-To learn more about Next.js, take a look at the following resources:
+1. Open the app, type a concept (e.g. "a paranoid toaster that thinks everything is a rug pull")
+2. Character generates in seconds with full identity
+3. Click "Talk" to chat with the character in real time
+4. Click "Visuals" to generate 3 meme images
+5. Click "Feed" to see social posts, generate more on demand
+6. Click "Launch" to copy the complete Four.meme launch kit
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Next.js 16, React 19, Tailwind CSS 4
+- Bankr LLM Gateway (DeepSeek V3.2)
+- Pollinations.ai (image generation)
+- Upstash Redis (Vercel KV)
+- Zod (runtime validation)
+- Vercel (deployment)
 
-## Deploy on Vercel
+## Hackathon
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Built for the [Four.Meme AI Sprint](https://dorahacks.io/hackathon/fourmemeaisprint/detail) on DoraHacks.

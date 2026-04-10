@@ -12,6 +12,22 @@ interface MemeData {
 
 type Tab = 'character' | 'chat' | 'images' | 'content' | 'export'
 
+function ErrorBanner({ message, onRetry, onDismiss }: { message: string; onRetry?: () => void; onDismiss: () => void }) {
+  return (
+    <div className="card p-3 border-red-500/20 flex items-center justify-between gap-3">
+      <p className="text-sm text-red-400 flex-1">{message}</p>
+      <div className="flex gap-2">
+        {onRetry && (
+          <button onClick={onRetry} className="text-xs px-3 py-1 rounded bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-colors">
+            Retry
+          </button>
+        )}
+        <button onClick={onDismiss} className="text-xs text-zinc-600 hover:text-zinc-400">dismiss</button>
+      </div>
+    </div>
+  )
+}
+
 export default function MemePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [data, setData] = useState<MemeData | null>(null)
@@ -22,11 +38,18 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
   const [isGeneratingImages, setIsGeneratingImages] = useState(false)
   const [isGeneratingContent, setIsGeneratingContent] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
+  const [chatError, setChatError] = useState<string | null>(null)
+  const [imageError, setImageError] = useState<string | null>(null)
+  const [contentError, setContentError] = useState<string | null>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
+  const lastChatMsg = useRef<string>('')
 
   useEffect(() => {
     fetch(`/api/session?id=${id}`)
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error('Session not found')
+        return r.json()
+      })
       .then(d => {
         if (d.error) { setLoading(false); return }
         setData(d)
@@ -39,15 +62,19 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [data?.chatHistory])
 
-  const sendChat = async () => {
-    if (!chatInput.trim() || isSending || !data) return
-    const msg = chatInput.trim()
-    setChatInput('')
+  const sendChat = async (retryMsg?: string) => {
+    const msg = retryMsg || chatInput.trim()
+    if (!msg || isSending || !data) return
+    if (!retryMsg) setChatInput('')
+    lastChatMsg.current = msg
+    setChatError(null)
 
-    setData(prev => prev ? {
-      ...prev,
-      chatHistory: [...prev.chatHistory, { role: 'user', content: msg }],
-    } : prev)
+    if (!retryMsg) {
+      setData(prev => prev ? {
+        ...prev,
+        chatHistory: [...prev.chatHistory, { role: 'user', content: msg }],
+      } : prev)
+    }
 
     setIsSending(true)
     try {
@@ -56,13 +83,17 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ memeId: id, message: msg }),
       })
-      const { reply } = await res.json()
+      const body = await res.json()
+      if (!res.ok) {
+        setChatError(body.error || 'Chat failed')
+        return
+      }
       setData(prev => prev ? {
         ...prev,
-        chatHistory: [...prev.chatHistory, { role: 'assistant', content: reply }],
+        chatHistory: [...prev.chatHistory, { role: 'assistant', content: body.reply }],
       } : prev)
     } catch {
-      // Silent fail
+      setChatError('Network error. Check your connection.')
     } finally {
       setIsSending(false)
     }
@@ -71,16 +102,21 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
   const generateImages = async () => {
     if (isGeneratingImages) return
     setIsGeneratingImages(true)
+    setImageError(null)
     try {
       const res = await fetch('/api/images', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ memeId: id }),
       })
-      const { images } = await res.json()
-      setData(prev => prev ? { ...prev, images } : prev)
+      const body = await res.json()
+      if (!res.ok) {
+        setImageError(body.error || 'Image generation failed')
+        return
+      }
+      setData(prev => prev ? { ...prev, images: body.images } : prev)
     } catch {
-      // Silent fail
+      setImageError('Network error. Check your connection.')
     } finally {
       setIsGeneratingImages(false)
     }
@@ -89,21 +125,26 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
   const generateMoreContent = async () => {
     if (isGeneratingContent) return
     setIsGeneratingContent(true)
+    setContentError(null)
     try {
       const res = await fetch('/api/content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ memeId: id }),
       })
-      const { posts } = await res.json()
-      if (posts) {
+      const body = await res.json()
+      if (!res.ok) {
+        setContentError(body.error || 'Content generation failed')
+        return
+      }
+      if (body.posts) {
         setData(prev => prev ? {
           ...prev,
-          contentFeed: [...prev.contentFeed, ...posts],
+          contentFeed: [...prev.contentFeed, ...body.posts],
         } : prev)
       }
     } catch {
-      // Silent fail
+      setContentError('Network error. Check your connection.')
     } finally {
       setIsGeneratingContent(false)
     }
@@ -113,6 +154,18 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
     navigator.clipboard.writeText(text)
     setCopied(label)
     setTimeout(() => setCopied(null), 2000)
+  }
+
+  const copyAllLaunch = () => {
+    if (!data) return
+    const { character } = data
+    const all = [
+      `Name: ${character.name}`,
+      `Ticker: ${character.ticker}`,
+      `\nDescription:\n${character.tagline}\n\n${character.originStory}\n\n${character.memeWorldview}`,
+      `\nLaunch Post:\n${character.launchCopy}`,
+    ].join('\n')
+    copyText(all, 'all-launch')
   }
 
   if (loading) {
@@ -181,110 +234,150 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
       <div className="min-h-[400px]">
         {/* Identity Tab */}
         {tab === 'character' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="card p-5 space-y-3">
-              <h3 className="text-xs uppercase tracking-wider text-zinc-500">Origin Story</h3>
-              <p className="text-sm text-zinc-300 leading-relaxed">{character.originStory}</p>
-            </div>
-            <div className="card p-5 space-y-3">
-              <h3 className="text-xs uppercase tracking-wider text-zinc-500">Personality</h3>
-              <div className="space-y-2">
-                <div><span className="text-xs text-zinc-500">Vibe:</span> <span className="text-sm text-zinc-300">{character.vibe}</span></div>
-                <div><span className="text-xs text-zinc-500">Tone:</span> <span className="text-sm text-zinc-300">{character.tone}</span></div>
-                <div><span className="text-xs text-zinc-500">Speech:</span> <span className="text-sm text-zinc-300">{character.speechPattern}</span></div>
+          <div className="space-y-4">
+            {/* Character Consistency Proof */}
+            <div className="card p-5 glow-purple space-y-4">
+              <h3 className="text-xs uppercase tracking-wider text-purple-400">Character Consistency Proof</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <span className="text-[10px] text-zinc-600 uppercase">Vibe</span>
+                  <p className="text-sm text-white font-medium">{character.vibe}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-zinc-600 uppercase">Tone</span>
+                  <p className="text-sm text-white font-medium">{character.tone}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-zinc-600 uppercase">Catchphrase</span>
+                  <p className="text-sm text-purple-300 italic">&ldquo;{character.signatureLines[0]}&rdquo;</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-zinc-600 uppercase">Worldview</span>
+                  <p className="text-sm text-zinc-300 line-clamp-2">{character.memeWorldview}</p>
+                </div>
               </div>
+              <button
+                onClick={() => { setTab('chat'); setChatInput('Tell me your origin story') }}
+                className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
+              >
+                Ask this character about their origin story &rarr;
+              </button>
             </div>
-            <div className="card p-5 space-y-3">
-              <h3 className="text-xs uppercase tracking-wider text-zinc-500">Worldview</h3>
-              <p className="text-sm text-zinc-300 leading-relaxed">{character.memeWorldview}</p>
-            </div>
-            <div className="card p-5 space-y-3">
-              <h3 className="text-xs uppercase tracking-wider text-zinc-500">Signature Lines</h3>
-              <div className="space-y-1">
-                {character.signatureLines.map((line, i) => (
-                  <p key={i} className="text-sm text-purple-300 italic">&ldquo;{line}&rdquo;</p>
-                ))}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="card p-5 space-y-3">
+                <h3 className="text-xs uppercase tracking-wider text-zinc-500">Origin Story</h3>
+                <p className="text-sm text-zinc-300 leading-relaxed">{character.originStory}</p>
               </div>
-            </div>
-            <div className="card p-5 space-y-3">
-              <h3 className="text-xs uppercase tracking-wider text-zinc-500">Recurring Motifs</h3>
-              <div className="flex flex-wrap gap-2">
-                {character.recurringMotifs.map((m, i) => (
-                  <span key={i} className="text-xs px-2 py-1 rounded-full bg-purple-500/10 text-purple-300">{m}</span>
-                ))}
+              <div className="card p-5 space-y-3">
+                <h3 className="text-xs uppercase tracking-wider text-zinc-500">Personality</h3>
+                <div className="space-y-2">
+                  <div><span className="text-xs text-zinc-500">Vibe:</span> <span className="text-sm text-zinc-300">{character.vibe}</span></div>
+                  <div><span className="text-xs text-zinc-500">Tone:</span> <span className="text-sm text-zinc-300">{character.tone}</span></div>
+                  <div><span className="text-xs text-zinc-500">Speech:</span> <span className="text-sm text-zinc-300">{character.speechPattern}</span></div>
+                </div>
               </div>
-            </div>
-            <div className="card p-5 space-y-3">
-              <h3 className="text-xs uppercase tracking-wider text-zinc-500">Never Talks About</h3>
-              <div className="flex flex-wrap gap-2">
-                {character.tabooTopics.map((t, i) => (
-                  <span key={i} className="text-xs px-2 py-1 rounded-full bg-red-500/10 text-red-300">{t}</span>
-                ))}
+              <div className="card p-5 space-y-3">
+                <h3 className="text-xs uppercase tracking-wider text-zinc-500">Worldview</h3>
+                <p className="text-sm text-zinc-300 leading-relaxed">{character.memeWorldview}</p>
               </div>
-            </div>
-            <div className="card p-5 space-y-3 md:col-span-2">
-              <h3 className="text-xs uppercase tracking-wider text-zinc-500">Visual Style</h3>
-              <p className="text-sm text-zinc-300 leading-relaxed">{character.visualStyle}</p>
+              <div className="card p-5 space-y-3">
+                <h3 className="text-xs uppercase tracking-wider text-zinc-500">Signature Lines</h3>
+                <div className="space-y-1">
+                  {character.signatureLines.map((line, i) => (
+                    <p key={i} className="text-sm text-purple-300 italic">&ldquo;{line}&rdquo;</p>
+                  ))}
+                </div>
+              </div>
+              <div className="card p-5 space-y-3">
+                <h3 className="text-xs uppercase tracking-wider text-zinc-500">Recurring Motifs</h3>
+                <div className="flex flex-wrap gap-2">
+                  {character.recurringMotifs.map((m, i) => (
+                    <span key={i} className="text-xs px-2 py-1 rounded-full bg-purple-500/10 text-purple-300">{m}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="card p-5 space-y-3">
+                <h3 className="text-xs uppercase tracking-wider text-zinc-500">Never Talks About</h3>
+                <div className="flex flex-wrap gap-2">
+                  {character.tabooTopics.map((t, i) => (
+                    <span key={i} className="text-xs px-2 py-1 rounded-full bg-red-500/10 text-red-300">{t}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="card p-5 space-y-3 md:col-span-2">
+                <h3 className="text-xs uppercase tracking-wider text-zinc-500">Visual Style</h3>
+                <p className="text-sm text-zinc-300 leading-relaxed">{character.visualStyle}</p>
+              </div>
             </div>
           </div>
         )}
 
         {/* Chat Tab */}
         {tab === 'chat' && (
-          <div className="card p-4 flex flex-col" style={{ height: '500px' }}>
-            <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-2">
-              {data.chatHistory.length === 0 && (
-                <div className="text-center py-8 space-y-3">
-                  <p className="text-zinc-600 text-sm">
-                    Say something to {character.name}. It&apos;ll respond in character.
-                  </p>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {['What do you think about Bitcoin?', 'Tell me your origin story', 'Whats your hot take on the market?'].map(q => (
-                      <button
-                        key={q}
-                        onClick={() => { setChatInput(q); }}
-                        className="text-xs px-3 py-1.5 rounded-full border border-white/10 text-zinc-500 hover:text-white hover:border-purple-500/30 transition-colors"
-                      >
-                        {q}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {data.chatHistory.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] px-4 py-2 text-sm ${
-                    msg.role === 'user' ? 'bubble-user text-purple-100' : 'bubble-meme text-zinc-200'
-                  }`}>
-                    {msg.content}
-                  </div>
-                </div>
-              ))}
-              {isSending && (
-                <div className="flex justify-start">
-                  <div className="bubble-meme px-4 py-2">
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <div className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <div className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          <div className="space-y-3">
+            {chatError && (
+              <ErrorBanner
+                message={chatError}
+                onRetry={() => sendChat(lastChatMsg.current)}
+                onDismiss={() => setChatError(null)}
+              />
+            )}
+            <div className="card p-4 flex flex-col" style={{ height: '500px' }}>
+              <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-2">
+                {data.chatHistory.length === 0 && (
+                  <div className="text-center py-8 space-y-3">
+                    <p className="text-zinc-600 text-sm">
+                      Say something to {character.name}. It&apos;ll respond in character.
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {['Tell me your origin story', 'What do you think about Bitcoin?', 'Give me your hottest take'].map(q => (
+                        <button
+                          key={q}
+                          onClick={() => { setChatInput(q); }}
+                          className="text-xs px-3 py-1.5 rounded-full border border-white/10 text-zinc-500 hover:text-white hover:border-purple-500/30 transition-colors"
+                        >
+                          {q}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={chatInput}
-                onChange={e => setChatInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && sendChat()}
-                placeholder={`Talk to ${character.name}...`}
-                className="flex-1 bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-purple-500/50"
-              />
-              <button onClick={sendChat} disabled={isSending || !chatInput.trim()} className="btn-primary text-sm">
-                Send
-              </button>
+                )}
+                {data.chatHistory.map((msg, i) => (
+                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] px-4 py-2 text-sm ${
+                      msg.role === 'user' ? 'bubble-user text-purple-100' : 'bubble-meme text-zinc-200'
+                    }`}>
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                {isSending && (
+                  <div className="flex justify-start">
+                    <div className="bubble-meme px-4 py-2">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && sendChat()}
+                  placeholder={`Talk to ${character.name}...`}
+                  className="flex-1 bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-purple-500/50"
+                />
+                <button onClick={() => sendChat()} disabled={isSending || !chatInput.trim()} className="btn-primary text-sm">
+                  Send
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -292,6 +385,13 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
         {/* Images Tab */}
         {tab === 'images' && (
           <div className="space-y-4">
+            {imageError && (
+              <ErrorBanner
+                message={imageError}
+                onRetry={generateImages}
+                onDismiss={() => setImageError(null)}
+              />
+            )}
             {data.images.length === 0 ? (
               <div className="card p-8 text-center space-y-4">
                 <p className="text-zinc-400 text-sm">No images yet. Generate 3 meme images for {character.name}.</p>
@@ -345,6 +445,13 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
         {/* Content Feed Tab */}
         {tab === 'content' && (
           <div className="space-y-3">
+            {contentError && (
+              <ErrorBanner
+                message={contentError}
+                onRetry={generateMoreContent}
+                onDismiss={() => setContentError(null)}
+              />
+            )}
             {data.contentFeed.length === 0 ? (
               <div className="card p-8 text-center space-y-4">
                 <p className="text-zinc-400 text-sm">No content yet.</p>
@@ -402,9 +509,17 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
         {/* Export / Launch Tab */}
         {tab === 'export' && (
           <div className="space-y-4">
-            <div className="card p-5 space-y-4">
-              <h3 className="text-sm font-semibold text-white">Four.meme Launch Package</h3>
-              <p className="text-xs text-zinc-500">Copy each field into Four.meme&apos;s create form.</p>
+            <div className="card p-5 glow-purple space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-white">Four.meme Launch Package</h3>
+                <button
+                  onClick={copyAllLaunch}
+                  className="text-xs px-3 py-1.5 rounded bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-colors"
+                >
+                  {copied === 'all-launch' ? 'Copied all!' : 'Copy entire kit'}
+                </button>
+              </div>
+              <p className="text-xs text-zinc-500">Copy each field into Four.meme&apos;s create form, or copy the entire kit at once.</p>
 
               {[
                 { label: 'Name', value: character.name },
@@ -433,9 +548,11 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
               <div className="card p-5 space-y-3">
                 <h3 className="text-sm font-semibold text-white">Profile Image</h3>
                 <p className="text-xs text-zinc-500">Right click to save, then upload to Four.meme.</p>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-3">
                   {data.images.map((url, i) => (
-                    <img key={i} src={url} alt={`Option ${i + 1}`} className="w-full aspect-square object-cover rounded-lg border border-white/5" />
+                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border-2 border-transparent hover:border-purple-500 transition-colors">
+                      <img src={url} alt={`Option ${i + 1}`} className="w-full aspect-square object-cover" />
+                    </a>
                   ))}
                 </div>
               </div>
@@ -443,10 +560,7 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
 
             <div className="card p-5 space-y-3">
               <h3 className="text-sm font-semibold text-white">Tokenomics Notes</h3>
-              <p className="text-xs text-zinc-400">
-                Suggested for {character.name} ({character.vibe} personality):
-              </p>
-              <div className="bg-black/30 border border-white/5 rounded-lg px-3 py-2 text-sm text-zinc-300">
+              <div className="bg-black/30 border border-white/5 rounded-lg px-3 py-2 text-sm text-zinc-300 space-y-1">
                 <p>Total Supply: 1,000,000,000 ${character.ticker}</p>
                 <p>Initial Liquidity: set via Four.meme defaults</p>
                 <p>No pre-sale, no team allocation. Fair launch.</p>

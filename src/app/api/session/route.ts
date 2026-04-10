@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'id required' }, { status: 400 })
   }
 
-  const session = getSession(id)
+  const session = await getSession(id)
   if (!session) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }

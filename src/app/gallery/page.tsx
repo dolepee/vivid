@@ -41,7 +41,7 @@ export default function GalleryPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white">Gallery</h1>
-          <p className="text-zinc-500 text-sm mt-1">{memes.length} meme{memes.length !== 1 ? 's' : ''} created this session</p>
+          <p className="text-zinc-500 text-sm mt-1">{memes.length} meme{memes.length !== 1 ? 's' : ''} created</p>
         </div>
         <a href="/" className="btn-primary text-sm">New meme</a>
       </div>

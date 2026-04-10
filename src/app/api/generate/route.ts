@@ -3,7 +3,21 @@ import { v4 as uuidv4 } from 'uuid'
 import { ai, TEXT_MODEL } from '@/lib/ai'
 import { SYSTEM_GENERATE, SYSTEM_CONTENT } from '@/lib/prompts'
 import { createSession } from '@/lib/store'
-import type { CharacterSpec, ContentPost } from '@/lib/types'
+import { parseCharacter, parseContentPosts } from '@/lib/schemas'
+import type { CharacterSpec } from '@/lib/types'
+
+async function generateCharacterRaw(concept: string): Promise<string> {
+  const res = await ai.chat.completions.create({
+    model: TEXT_MODEL,
+    messages: [
+      { role: 'system', content: SYSTEM_GENERATE },
+      { role: 'user', content: concept },
+    ],
+    temperature: 0.9,
+    max_tokens: 1500,
+  })
+  return res.choices[0]?.message?.content?.trim() || ''
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,28 +27,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'concept is required' }, { status: 400 })
     }
 
-    // Generate character spec
-    const charResponse = await ai.chat.completions.create({
-      model: TEXT_MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM_GENERATE },
-        { role: 'user', content: concept },
-      ],
-      temperature: 0.9,
-      max_tokens: 1500,
-    })
-
-    const raw = charResponse.choices[0]?.message?.content?.trim()
-    if (!raw) {
-      return NextResponse.json({ error: 'Empty response from AI' }, { status: 500 })
-    }
-
-    let parsed: Omit<CharacterSpec, 'id' | 'createdAt'>
+    // Generate + validate character with one retry
+    let parsed
+    let raw = await generateCharacterRaw(concept)
     try {
-      const cleaned = raw.replace(/^```json?\s*\n?/i, '').replace(/\n?```\s*$/i, '')
-      parsed = JSON.parse(cleaned)
+      parsed = parseCharacter(raw)
     } catch {
-      return NextResponse.json({ error: 'Failed to parse character', raw }, { status: 500 })
+      raw = await generateCharacterRaw(concept)
+      try {
+        parsed = parseCharacter(raw)
+      } catch {
+        return NextResponse.json({ error: 'AI returned invalid character data. Try again.' }, { status: 502 })
+      }
     }
 
     const character: CharacterSpec = {
@@ -54,19 +58,20 @@ export async function POST(req: NextRequest) {
       max_tokens: 800,
     })
 
-    const session = createSession(character)
+    const session = await createSession(character)
 
     try {
       const contentResponse = await contentPromise
       const contentRaw = contentResponse.choices[0]?.message?.content?.trim()
       if (contentRaw) {
-        const cleaned = contentRaw.replace(/^```json?\s*\n?/i, '').replace(/\n?```\s*$/i, '')
-        const posts = JSON.parse(cleaned) as ContentPost[]
-        const timestamped = posts.map(p => ({
+        const posts = parseContentPosts(contentRaw)
+        session.contentFeed = posts.map(p => ({
           ...p,
           createdAt: new Date().toISOString(),
         }))
-        session.contentFeed = timestamped
+        // Update session with content feed
+        const { addContentPosts } = await import('@/lib/store')
+        await addContentPosts(character.id, session.contentFeed)
       }
     } catch {
       // Content generation is non-critical

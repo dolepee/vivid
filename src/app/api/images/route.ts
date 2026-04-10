@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'memeId required' }, { status: 400 })
     }
 
-    const session = getSession(memeId)
+    const session = await getSession(memeId)
     if (!session) {
       return NextResponse.json({ error: 'Meme not found' }, { status: 404 })
     }
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Image generation failed' }, { status: 500 })
     }
 
-    setImages(memeId, validUrls)
+    await setImages(memeId, validUrls)
 
     return NextResponse.json({ images: validUrls })
   } catch (e) {

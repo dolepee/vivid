@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import type { CharacterSpec } from '@/lib/types'
 
@@ -12,11 +12,27 @@ const EXAMPLES = [
   'a wholesome grandma who accidentally became a degen',
 ]
 
+interface MemeSummary {
+  id: string
+  name: string
+  ticker: string
+  tagline: string
+  vibe: string
+}
+
 export default function Home() {
   const router = useRouter()
   const [concept, setConcept] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [featured, setFeatured] = useState<MemeSummary[]>([])
+
+  useEffect(() => {
+    fetch('/api/session/all')
+      .then(r => r.json())
+      .then(d => setFeatured((d.memes || []).slice(0, 3)))
+      .catch(() => {})
+  }, [])
 
   const handleGenerate = async () => {
     if (!concept.trim() || isGenerating) return
@@ -64,7 +80,7 @@ export default function Home() {
       <div className="max-w-2xl mx-auto space-y-4">
         <div className="card glow-purple p-6 space-y-4">
           <label className="text-sm font-medium text-zinc-300">
-            What's your meme concept?
+            What&apos;s your meme concept?
           </label>
           <textarea
             value={concept}
@@ -122,6 +138,29 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Featured memes */}
+      {featured.length > 0 && (
+        <div className="max-w-3xl mx-auto space-y-4">
+          <h2 className="text-sm text-zinc-500 text-center uppercase tracking-wider">Recently created</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {featured.map(meme => (
+              <a
+                key={meme.id}
+                href={`/meme/${meme.id}`}
+                className="card card-hover p-4 space-y-2 block transition-transform hover:scale-[1.02]"
+              >
+                <div className="flex items-start justify-between">
+                  <h3 className="text-sm font-bold text-white">{meme.name}</h3>
+                  <span className="text-purple-400 font-mono text-[10px]">${meme.ticker}</span>
+                </div>
+                <p className="text-xs text-zinc-400 line-clamp-2">{meme.tagline}</p>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 inline-block">{meme.vibe}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* How it works */}
       <div className="max-w-3xl mx-auto">

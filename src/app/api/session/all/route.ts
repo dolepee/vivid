@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getAllSessions } from '@/lib/store'
 
 export async function GET() {
-  const sessions = getAllSessions()
+  const sessions = await getAllSessions()
   const summaries = sessions.map(s => ({
     id: s.character.id,
     name: s.character.name,
