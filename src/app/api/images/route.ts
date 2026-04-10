@@ -19,34 +19,17 @@ export async function POST(req: NextRequest) {
     const prompt = IMAGE_PROMPT(character)
     const encoded = encodeURIComponent(prompt)
 
-    // Generate 3 images with different seeds via Pollinations.ai (free, no key needed)
-    const seeds = [
-      Math.floor(Math.random() * 1000000),
-      Math.floor(Math.random() * 1000000),
-      Math.floor(Math.random() * 1000000),
-    ]
-
-    const urls = seeds.map(
-      seed => `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&seed=${seed}&nologo=true`
-    )
-
-    // Verify at least one image is reachable
-    const checks = await Promise.allSettled(
-      urls.map(url => fetch(url, { method: 'HEAD' }))
-    )
-
-    const validUrls = urls.filter((_, i) => {
-      const result = checks[i]
-      return result.status === 'fulfilled' && result.value.ok
+    // Pollinations.ai generates images on-demand when the URL is fetched by the
+    // browser. HEAD requests are unreliable (often 500), so we construct the URLs
+    // directly. Each seed produces a different image deterministically.
+    const urls = [0, 1, 2].map(i => {
+      const seed = Math.floor(Math.random() * 1000000)
+      return `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&seed=${seed}&nologo=true&cacheBust=${Date.now()}-${i}`
     })
 
-    if (validUrls.length === 0) {
-      return NextResponse.json({ error: 'Image generation failed' }, { status: 500 })
-    }
+    await setImages(memeId, urls)
 
-    await setImages(memeId, validUrls)
-
-    return NextResponse.json({ images: validUrls })
+    return NextResponse.json({ images: urls })
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Image generation failed'
     return NextResponse.json({ error: message }, { status: 500 })
