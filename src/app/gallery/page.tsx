@@ -29,7 +29,7 @@ export default function GalleryPage() {
     return (
       <div className="card hero-surface flex min-h-[280px] items-center justify-center p-8">
         <div className="space-y-4 text-center">
-          <p className="text-xs uppercase tracking-[0.18em] text-[#00d4aa]">Gallery sync</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-[#f3ba2f]">Gallery sync</p>
           <h2 className="text-2xl font-semibold text-white">Collecting living memes...</h2>
           <div className="mx-auto flex w-fit gap-2">
             <span className="typing-dot" />
@@ -63,9 +63,9 @@ export default function GalleryPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-lg font-bold text-white">{meme.name}</h2>
-                  <p className="text-[#00d4aa] font-mono text-xs">${meme.ticker}</p>
+                  <p className="text-[#f3ba2f] font-mono text-xs">${meme.ticker}</p>
                 </div>
-                <span className="text-[10px] px-2 py-1 rounded-full bg-[#00d4aa]/10 text-[#9bf4e0]">{meme.vibe}</span>
+                <span className="text-[10px] px-2 py-1 rounded-full bg-[#f3ba2f]/10 text-[#ffe29a]">{meme.vibe}</span>
               </div>
               <p className="text-sm text-zinc-400 line-clamp-2">{meme.tagline}</p>
               <div className="flex gap-3 text-[10px] text-zinc-600">

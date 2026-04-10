@@ -13,17 +13,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen antialiased bg-[#0a0a0a]">
+      <body className="min-h-screen antialiased">
         <header className="sticky top-0 z-40 border-b border-white/5 bg-black/30 px-6 py-4 backdrop-blur-xl">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <a href="/" className="flex items-center gap-2">
-              <div className="avatar-orb w-9 h-9 rounded-xl bg-[radial-gradient(circle_at_30%_30%,#24f1c5,#00d4aa_52%,#04241f)] flex items-center justify-center text-[#03120e] font-bold text-sm">
+              <div className="avatar-orb w-9 h-9 rounded-xl bg-[radial-gradient(circle_at_30%_30%,#fff1c7,#ffd76a_52%,#2b1806)] flex items-center justify-center text-[#241703] font-bold text-sm">
                 V
               </div>
               <span className="font-bold text-lg text-white">VIVID</span>
             </a>
             <div className="flex items-center gap-4">
-              <a href="/gallery" className="text-xs text-zinc-500 hover:text-[#b8fff0] transition-colors">Gallery</a>
+              <a href="/gallery" className="text-xs text-zinc-500 hover:text-[#ffe29a] transition-colors">Gallery</a>
               <span className="status-pill hidden sm:inline-flex">Living Meme AI</span>
             </div>
           </div>
