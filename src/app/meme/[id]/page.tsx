@@ -20,13 +20,18 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
   const [chatInput, setChatInput] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [isGeneratingImages, setIsGeneratingImages] = useState(false)
+  const [isGeneratingContent, setIsGeneratingContent] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch(`/api/session?id=${id}`)
       .then(r => r.json())
-      .then(d => { setData(d); setLoading(false) })
+      .then(d => {
+        if (d.error) { setLoading(false); return }
+        setData(d)
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
   }, [id])
 
@@ -81,6 +86,29 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
     }
   }
 
+  const generateMoreContent = async () => {
+    if (isGeneratingContent) return
+    setIsGeneratingContent(true)
+    try {
+      const res = await fetch('/api/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memeId: id }),
+      })
+      const { posts } = await res.json()
+      if (posts) {
+        setData(prev => prev ? {
+          ...prev,
+          contentFeed: [...prev.contentFeed, ...posts],
+        } : prev)
+      }
+    } catch {
+      // Silent fail
+    } finally {
+      setIsGeneratingContent(false)
+    }
+  }
+
   const copyText = (text: string, label: string) => {
     navigator.clipboard.writeText(text)
     setCopied(label)
@@ -100,8 +128,9 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
 
   if (!data) {
     return (
-      <div className="text-center py-20">
-        <p className="text-zinc-400">Meme not found. <a href="/" className="text-purple-400 underline">Create one</a></p>
+      <div className="text-center py-20 space-y-4">
+        <p className="text-zinc-400">Meme not found or session expired.</p>
+        <a href="/" className="btn-primary inline-block">Create a new meme</a>
       </div>
     )
   }
@@ -125,16 +154,19 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
           <p className="text-purple-400 font-mono text-sm">${character.ticker}</p>
           <p className="text-zinc-400 mt-1">{character.tagline}</p>
         </div>
-        <a href="/" className="btn-secondary text-xs">New meme</a>
+        <div className="flex gap-2">
+          <a href="/gallery" className="btn-secondary text-xs">Gallery</a>
+          <a href="/" className="btn-secondary text-xs">New meme</a>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-white/5 pb-0">
+      <div className="flex gap-1 border-b border-white/5 pb-0 overflow-x-auto">
         {TABS.map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
               tab === t.key
                 ? 'text-purple-400 bg-white/5 border-b-2 border-purple-500'
                 : 'text-zinc-500 hover:text-zinc-300'
@@ -170,7 +202,7 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
               <h3 className="text-xs uppercase tracking-wider text-zinc-500">Signature Lines</h3>
               <div className="space-y-1">
                 {character.signatureLines.map((line, i) => (
-                  <p key={i} className="text-sm text-purple-300 italic">"{line}"</p>
+                  <p key={i} className="text-sm text-purple-300 italic">&ldquo;{line}&rdquo;</p>
                 ))}
               </div>
             </div>
@@ -190,6 +222,10 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
                 ))}
               </div>
             </div>
+            <div className="card p-5 space-y-3 md:col-span-2">
+              <h3 className="text-xs uppercase tracking-wider text-zinc-500">Visual Style</h3>
+              <p className="text-sm text-zinc-300 leading-relaxed">{character.visualStyle}</p>
+            </div>
           </div>
         )}
 
@@ -198,9 +234,22 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
           <div className="card p-4 flex flex-col" style={{ height: '500px' }}>
             <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-2">
               {data.chatHistory.length === 0 && (
-                <p className="text-center text-zinc-600 text-sm py-8">
-                  Say something to {character.name}. It'll respond in character.
-                </p>
+                <div className="text-center py-8 space-y-3">
+                  <p className="text-zinc-600 text-sm">
+                    Say something to {character.name}. It&apos;ll respond in character.
+                  </p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {['What do you think about Bitcoin?', 'Tell me your origin story', 'Whats your hot take on the market?'].map(q => (
+                      <button
+                        key={q}
+                        onClick={() => { setChatInput(q); }}
+                        className="text-xs px-3 py-1.5 rounded-full border border-white/10 text-zinc-500 hover:text-white hover:border-purple-500/30 transition-colors"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
               {data.chatHistory.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -263,13 +312,32 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {data.images.map((url, i) => (
-                  <div key={i} className="card overflow-hidden">
-                    <img src={url} alt={`${character.name} meme ${i + 1}`} className="w-full aspect-square object-cover" />
-                  </div>
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {data.images.map((url, i) => (
+                    <div key={i} className="card overflow-hidden group relative">
+                      <img src={url} alt={`${character.name} meme ${i + 1}`} className="w-full aspect-square object-cover" />
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm font-medium"
+                      >
+                        Open full size
+                      </a>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-center">
+                  <button
+                    onClick={generateImages}
+                    disabled={isGeneratingImages}
+                    className="btn-secondary text-sm"
+                  >
+                    {isGeneratingImages ? 'Regenerating...' : 'Regenerate images'}
+                  </button>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -278,21 +346,55 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
         {tab === 'content' && (
           <div className="space-y-3">
             {data.contentFeed.length === 0 ? (
-              <p className="text-center text-zinc-600 text-sm py-8">No content generated yet.</p>
-            ) : (
-              data.contentFeed.map((post, i) => (
-                <div key={i} className="card p-4 card-hover cursor-pointer" onClick={() => copyText(post.content, `post-${i}`)}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <span className="text-[10px] uppercase tracking-wider text-zinc-600">{post.type}</span>
-                      <p className="text-sm text-zinc-200 mt-1">{post.content}</p>
-                    </div>
-                    <span className="text-[10px] text-zinc-600 whitespace-nowrap">
-                      {copied === `post-${i}` ? 'Copied!' : 'Click to copy'}
+              <div className="card p-8 text-center space-y-4">
+                <p className="text-zinc-400 text-sm">No content yet.</p>
+                <button
+                  onClick={generateMoreContent}
+                  disabled={isGeneratingContent}
+                  className="btn-primary"
+                >
+                  {isGeneratingContent ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Generating...
                     </span>
+                  ) : (
+                    'Generate content'
+                  )}
+                </button>
+              </div>
+            ) : (
+              <>
+                {data.contentFeed.map((post, i) => (
+                  <div key={i} className="card p-4 card-hover cursor-pointer" onClick={() => copyText(post.content, `post-${i}`)}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <span className="text-[10px] uppercase tracking-wider text-zinc-600">{post.type}</span>
+                        <p className="text-sm text-zinc-200 mt-1">{post.content}</p>
+                      </div>
+                      <span className="text-[10px] text-zinc-600 whitespace-nowrap">
+                        {copied === `post-${i}` ? 'Copied!' : 'Click to copy'}
+                      </span>
+                    </div>
                   </div>
+                ))}
+                <div className="text-center pt-2">
+                  <button
+                    onClick={generateMoreContent}
+                    disabled={isGeneratingContent}
+                    className="btn-secondary text-sm"
+                  >
+                    {isGeneratingContent ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Generating more...
+                      </span>
+                    ) : (
+                      'Generate more posts'
+                    )}
+                  </button>
                 </div>
-              ))
+              </>
             )}
           </div>
         )}
@@ -302,7 +404,7 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
           <div className="space-y-4">
             <div className="card p-5 space-y-4">
               <h3 className="text-sm font-semibold text-white">Four.meme Launch Package</h3>
-              <p className="text-xs text-zinc-500">Copy each field into Four.meme's create form.</p>
+              <p className="text-xs text-zinc-500">Copy each field into Four.meme&apos;s create form.</p>
 
               {[
                 { label: 'Name', value: character.name },
@@ -326,6 +428,18 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
                 </div>
               ))}
             </div>
+
+            {data.images.length > 0 && (
+              <div className="card p-5 space-y-3">
+                <h3 className="text-sm font-semibold text-white">Profile Image</h3>
+                <p className="text-xs text-zinc-500">Right click to save, then upload to Four.meme.</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {data.images.map((url, i) => (
+                    <img key={i} src={url} alt={`Option ${i + 1}`} className="w-full aspect-square object-cover rounded-lg border border-white/5" />
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="card p-5 space-y-3">
               <h3 className="text-sm font-semibold text-white">Tokenomics Notes</h3>

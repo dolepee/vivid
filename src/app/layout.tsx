@@ -20,7 +20,10 @@ export default function RootLayout({
               <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-sm">V</div>
               <span className="font-bold text-lg text-white">VIVID</span>
             </a>
-            <span className="text-xs text-zinc-500">Living Meme AI</span>
+            <div className="flex items-center gap-4">
+              <a href="/gallery" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">Gallery</a>
+              <span className="text-xs text-zinc-600">Living Meme AI</span>
+            </div>
           </div>
         </header>
         <main className="max-w-5xl mx-auto px-6 py-8">
