@@ -35,7 +35,10 @@ export async function POST(req: NextRequest) {
       urls.map(url => fetch(url, { method: 'HEAD' }))
     )
 
-    const validUrls = urls.filter((_, i) => checks[i].status === 'fulfilled')
+    const validUrls = urls.filter((_, i) => {
+      const result = checks[i]
+      return result.status === 'fulfilled' && result.value.ok
+    })
 
     if (validUrls.length === 0) {
       return NextResponse.json({ error: 'Image generation failed' }, { status: 500 })

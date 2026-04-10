@@ -28,21 +28,25 @@ export async function getSession(id: string): Promise<MemeSession | null> {
   return typeof data === 'string' ? JSON.parse(data) : data as unknown as MemeSession
 }
 
+// NOTE: This is a non-atomic read-modify-write. Two concurrent updates to the
+// same session can race. Acceptable for a hackathon MVP where each meme is
+// typically used by one person at a time. A production version would use Redis
+// WATCH/MULTI or Lua scripts for atomicity.
 async function updateSession(id: string, updater: (s: MemeSession) => MemeSession): Promise<MemeSession | null> {
   const session = await getSession(id)
   if (!session) return null
-  const updated = updater(session)
+  const updated = updater({ ...session })
   await redis.set(SESSION_KEY(id), JSON.stringify(updated), { ex: TTL })
   return updated
 }
 
 export async function addChatMessage(id: string, message: ChatMessage): Promise<void> {
   await updateSession(id, s => {
-    s.chatHistory.push(message)
-    if (s.chatHistory.length > 50) {
-      s.chatHistory = s.chatHistory.slice(-50)
+    const chatHistory = [...s.chatHistory, message]
+    return {
+      ...s,
+      chatHistory: chatHistory.length > 50 ? chatHistory.slice(-50) : chatHistory,
     }
-    return s
   })
 }
 
@@ -51,10 +55,10 @@ export async function setImages(id: string, images: string[]): Promise<void> {
 }
 
 export async function addContentPosts(id: string, posts: ContentPost[]): Promise<void> {
-  await updateSession(id, s => {
-    s.contentFeed.push(...posts)
-    return s
-  })
+  await updateSession(id, s => ({
+    ...s,
+    contentFeed: [...s.contentFeed, ...posts],
+  }))
 }
 
 export async function getAllSessions(): Promise<MemeSession[]> {
@@ -66,5 +70,10 @@ export async function getAllSessions(): Promise<MemeSession[]> {
     const session = await getSession(id as string)
     if (session) sessions.push(session)
   }
+
+  sessions.sort((a, b) =>
+    new Date(b.character.createdAt).getTime() - new Date(a.character.createdAt).getTime()
+  )
+
   return sessions
 }
