@@ -12,17 +12,185 @@ interface MemeData {
 
 type Tab = 'character' | 'chat' | 'images' | 'content' | 'export'
 
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+function getPersonaFontClass(character: CharacterSpec) {
+  const signal = [
+    character.vibe,
+    character.tone,
+    character.speechPattern,
+    character.originStory,
+    character.name,
+  ].join(' ').toLowerCase()
+
+  if (/(ancient|oracle|myth|relic|philosopher|elder|monk|prophet)/.test(signal)) {
+    return 'font-persona-serif'
+  }
+
+  if (/(machine|robot|toaster|terminal|protocol|paranoid|glitch|cyber|bot)/.test(signal)) {
+    return 'font-persona-mono'
+  }
+
+  if (/(chaotic|degen|gremlin|wild|goblin|unhinged|feral)/.test(signal)) {
+    return 'font-persona-chaotic'
+  }
+
+  return ''
+}
+
 function ErrorBanner({ message, onRetry, onDismiss }: { message: string; onRetry?: () => void; onDismiss: () => void }) {
   return (
-    <div className="card p-3 border-red-500/20 flex items-center justify-between gap-3">
-      <p className="text-sm text-red-400 flex-1">{message}</p>
+    <div className="card flex items-center justify-between gap-3 border border-red-500/20 bg-red-500/5 p-3">
+      <p className="flex-1 text-sm text-red-300">{message}</p>
       <div className="flex gap-2">
         {onRetry && (
-          <button onClick={onRetry} className="text-xs px-3 py-1 rounded bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-colors">
+          <button onClick={onRetry} className="rounded-lg bg-red-500/10 px-3 py-1 text-xs text-red-200 hover:bg-red-500/20">
             Retry
           </button>
         )}
         <button onClick={onDismiss} className="text-xs text-zinc-600 hover:text-zinc-400">dismiss</button>
+      </div>
+    </div>
+  )
+}
+
+function PersonaAvatar({ character, imageUrl, compact = false }: { character: CharacterSpec; imageUrl?: string; compact?: boolean }) {
+  const size = compact ? 'w-10 h-10' : 'w-18 h-18 sm:w-20 sm:h-20'
+  const textSize = compact ? 'text-sm' : 'text-xl'
+
+  return (
+    <div className={`avatar-orb avatar-breathe ${size} rounded-[22px] bg-[radial-gradient(circle_at_30%_30%,rgba(36,241,197,0.9),rgba(0,212,170,0.45)_52%,rgba(4,36,31,0.9))] flex items-center justify-center text-[#02120e] font-semibold ${textSize}`}>
+      {imageUrl ? (
+        <img src={imageUrl} alt={`${character.name} avatar`} className="h-full w-full object-cover" />
+      ) : (
+        <span>{character.name.charAt(0)}</span>
+      )}
+    </div>
+  )
+}
+
+function DeployModal({
+  open,
+  onClose,
+  character,
+  images,
+  selectedImageIndex,
+  onSelectImage,
+  onCopyKit,
+}: {
+  open: boolean
+  onClose: () => void
+  character: CharacterSpec
+  images: string[]
+  selectedImageIndex: number
+  onSelectImage: (index: number) => void
+  onCopyKit: () => void
+}) {
+  useEffect(() => {
+    if (!open) return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [open, onClose])
+
+  if (!open) return null
+
+  const selectedImage = images[selectedImageIndex] || images[0]
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-panel p-6 sm:p-8 space-y-6" onClick={event => event.stopPropagation()}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.18em] text-[#00d4aa]">Hackathon export climax</p>
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-[-0.03em] text-white">
+              {character.name} is ready for Four.meme
+            </h2>
+            <p className="max-w-2xl text-sm leading-6 text-zinc-400">
+              Final check: identity locked, image selected, lore aligned. Ship the lifeform with a single decisive click.
+            </p>
+          </div>
+          <button onClick={onClose} className="btn-secondary text-xs">Close</button>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="space-y-4">
+            <div className="card overflow-hidden p-3">
+              {selectedImage ? (
+                <img src={selectedImage} alt={`${character.name} selected`} className="aspect-square w-full rounded-[18px] object-cover" />
+              ) : (
+                <div className="flex aspect-square w-full items-center justify-center rounded-[18px] bg-[radial-gradient(circle_at_30%_30%,rgba(36,241,197,0.25),rgba(0,212,170,0.08),transparent_70%)] text-6xl font-semibold text-[#00d4aa]">
+                  {character.name.charAt(0)}
+                </div>
+              )}
+            </div>
+
+            {images.length > 0 && (
+              <div className="grid grid-cols-3 gap-3">
+                {images.map((url, index) => (
+                  <button
+                    key={url}
+                    onClick={() => onSelectImage(index)}
+                    className={`overflow-hidden rounded-2xl border-2 ${index === selectedImageIndex ? 'border-[#00d4aa] shadow-[0_0_30px_rgba(0,212,170,0.24)]' : 'border-transparent hover:border-white/10'}`}
+                  >
+                    <img src={url} alt={`Preview ${index + 1}`} className="aspect-square w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <div className="card p-5 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-zinc-600">Token name</p>
+                  <h3 className="mt-2 text-2xl font-semibold text-white">{character.name}</h3>
+                </div>
+                <span className="rounded-full border border-[#00d4aa]/16 bg-[#00d4aa]/10 px-3 py-1 text-xs font-medium tracking-[0.18em] text-[#9bf4e0]">
+                  ${character.ticker}
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-[0.18em] text-zinc-600">Initial lore</p>
+                <p className="text-sm leading-7 text-zinc-300">{character.originStory}</p>
+              </div>
+            </div>
+
+            <div className="card p-5 space-y-3">
+              <p className="text-xs uppercase tracking-[0.18em] text-zinc-600">Launch posture</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/6 bg-white/[0.02] p-4">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-zinc-600">Tagline</p>
+                  <p className="mt-2 text-sm text-zinc-300">{character.tagline}</p>
+                </div>
+                <div className="rounded-2xl border border-white/6 bg-white/[0.02] p-4">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-zinc-600">Voice signature</p>
+                  <p className="mt-2 text-sm text-[#9bf4e0] italic">“{character.signatureLines[0]}”</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button onClick={onCopyKit} className="btn-secondary flex-1">Copy entire kit</button>
+              <a
+                href="https://four.meme/create"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary btn-deploy flex-1 text-center"
+              >
+                Deploy on Four.Meme
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -35,12 +203,17 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
   const [tab, setTab] = useState<Tab>('character')
   const [chatInput, setChatInput] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [showTypingIndicator, setShowTypingIndicator] = useState(false)
   const [isGeneratingImages, setIsGeneratingImages] = useState(false)
   const [isGeneratingContent, setIsGeneratingContent] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
   const [chatError, setChatError] = useState<string | null>(null)
   const [imageError, setImageError] = useState<string | null>(null)
   const [contentError, setContentError] = useState<string | null>(null)
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [loadedImages, setLoadedImages] = useState<string[]>([])
+
   const chatEndRef = useRef<HTMLDivElement>(null)
   const lastChatMsg = useRef<string>('')
 
@@ -51,7 +224,10 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
         return r.json()
       })
       .then(d => {
-        if (d.error) { setLoading(false); return }
+        if (d.error) {
+          setLoading(false)
+          return
+        }
         setData(d)
         setLoading(false)
       })
@@ -60,11 +236,21 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [data?.chatHistory])
+  }, [data?.chatHistory, showTypingIndicator])
+
+  useEffect(() => {
+    setLoadedImages([])
+    if (data?.images.length) {
+      setSelectedImageIndex(current => Math.min(current, data.images.length - 1))
+    } else {
+      setSelectedImageIndex(0)
+    }
+  }, [data?.images.join('|')])
 
   const sendChat = async (retryMsg?: string) => {
     const msg = retryMsg || chatInput.trim()
     if (!msg || isSending || !data) return
+
     if (!retryMsg) setChatInput('')
     lastChatMsg.current = msg
     setChatError(null)
@@ -77,6 +263,9 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
     }
 
     setIsSending(true)
+    setShowTypingIndicator(true)
+    const typingStartedAt = Date.now()
+
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -84,17 +273,29 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
         body: JSON.stringify({ memeId: id, message: msg }),
       })
       const body = await res.json()
+
+      const elapsed = Date.now() - typingStartedAt
+      if (elapsed < 1400) {
+        await sleep(1400 - elapsed)
+      }
+
       if (!res.ok) {
         setChatError(body.error || 'Chat failed')
         return
       }
+
       setData(prev => prev ? {
         ...prev,
         chatHistory: [...prev.chatHistory, { role: 'assistant', content: body.reply }],
       } : prev)
     } catch {
+      const elapsed = Date.now() - typingStartedAt
+      if (elapsed < 1400) {
+        await sleep(1400 - elapsed)
+      }
       setChatError('Network error. Check your connection.')
     } finally {
+      setShowTypingIndicator(false)
       setIsSending(false)
     }
   }
@@ -103,6 +304,7 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
     if (isGeneratingImages) return
     setIsGeneratingImages(true)
     setImageError(null)
+
     try {
       const res = await fetch('/api/images', {
         method: 'POST',
@@ -126,6 +328,7 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
     if (isGeneratingContent) return
     setIsGeneratingContent(true)
     setContentError(null)
+
     try {
       const res = await fetch('/api/content', {
         method: 'POST',
@@ -133,10 +336,12 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
         body: JSON.stringify({ memeId: id }),
       })
       const body = await res.json()
+
       if (!res.ok) {
         setContentError(body.error || 'Content generation failed')
         return
       }
+
       if (body.posts) {
         setData(prev => prev ? {
           ...prev,
@@ -170,10 +375,15 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-zinc-400">Loading meme...</span>
+      <div className="card hero-surface flex min-h-[340px] items-center justify-center p-10">
+        <div className="space-y-4 text-center">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#00d4aa]">Restoring organism</p>
+          <h2 className="text-2xl font-semibold text-white">Waking the meme back up...</h2>
+          <div className="mx-auto flex w-fit gap-2">
+            <span className="typing-dot" />
+            <span className="typing-dot" />
+            <span className="typing-dot" />
+          </div>
         </div>
       </div>
     )
@@ -181,16 +391,19 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
 
   if (!data) {
     return (
-      <div className="text-center py-20 space-y-4">
-        <p className="text-zinc-400">Meme not found or session expired.</p>
+      <div className="card p-12 text-center space-y-4">
+        <p className="text-sm uppercase tracking-[0.18em] text-zinc-600">No lifeform found</p>
+        <h2 className="text-2xl font-semibold text-white">This meme is missing or expired.</h2>
         <a href="/" className="btn-primary inline-block">Create a new meme</a>
       </div>
     )
   }
 
   const { character } = data
+  const personaFontClass = getPersonaFontClass(character)
+  const avatarImage = data.images[selectedImageIndex] || data.images[0]
 
-  const TABS: { key: Tab; label: string }[] = [
+  const tabs: { key: Tab; label: string }[] = [
     { key: 'character', label: 'Identity' },
     { key: 'chat', label: 'Talk' },
     { key: 'images', label: 'Visuals' },
@@ -199,385 +412,381 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
   ]
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">{character.name}</h1>
-          <p className="text-purple-400 font-mono text-sm">${character.ticker}</p>
-          <p className="text-zinc-400 mt-1">{character.tagline}</p>
-        </div>
-        <div className="flex gap-2">
-          <a href="/gallery" className="btn-secondary text-xs">Gallery</a>
-          <a href="/" className="btn-secondary text-xs">New meme</a>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-white/5 pb-0 overflow-x-auto">
-        {TABS.map(t => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
-              tab === t.key
-                ? 'text-purple-400 bg-white/5 border-b-2 border-purple-500'
-                : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
-      <div className="min-h-[400px]">
-        {/* Identity Tab */}
-        {tab === 'character' && (
-          <div className="space-y-4">
-            {/* Character Consistency Proof */}
-            <div className="card p-5 glow-purple space-y-4">
-              <h3 className="text-xs uppercase tracking-wider text-purple-400">Character Consistency Proof</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div>
-                  <span className="text-[10px] text-zinc-600 uppercase">Vibe</span>
-                  <p className="text-sm text-white font-medium">{character.vibe}</p>
-                </div>
-                <div>
-                  <span className="text-[10px] text-zinc-600 uppercase">Tone</span>
-                  <p className="text-sm text-white font-medium">{character.tone}</p>
-                </div>
-                <div>
-                  <span className="text-[10px] text-zinc-600 uppercase">Catchphrase</span>
-                  <p className="text-sm text-purple-300 italic">&ldquo;{character.signatureLines[0]}&rdquo;</p>
-                </div>
-                <div>
-                  <span className="text-[10px] text-zinc-600 uppercase">Worldview</span>
-                  <p className="text-sm text-zinc-300 line-clamp-2">{character.memeWorldview}</p>
-                </div>
+    <>
+      <div className="space-y-7">
+        <div className="card hero-surface flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+          <div className="flex items-center gap-4">
+            <PersonaAvatar character={character} imageUrl={avatarImage} />
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-3xl sm:text-4xl font-semibold tracking-[-0.04em] text-white">{character.name}</h1>
+                <span className="rounded-full border border-[#00d4aa]/14 bg-[#00d4aa]/8 px-3 py-1 text-xs font-medium tracking-[0.18em] text-[#9bf4e0]">
+                  ${character.ticker}
+                </span>
               </div>
-              <button
-                onClick={() => { setTab('chat'); setChatInput('Tell me your origin story') }}
-                className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
-              >
-                Ask this character about their origin story &rarr;
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="card p-5 space-y-3">
-                <h3 className="text-xs uppercase tracking-wider text-zinc-500">Origin Story</h3>
-                <p className="text-sm text-zinc-300 leading-relaxed">{character.originStory}</p>
-              </div>
-              <div className="card p-5 space-y-3">
-                <h3 className="text-xs uppercase tracking-wider text-zinc-500">Personality</h3>
-                <div className="space-y-2">
-                  <div><span className="text-xs text-zinc-500">Vibe:</span> <span className="text-sm text-zinc-300">{character.vibe}</span></div>
-                  <div><span className="text-xs text-zinc-500">Tone:</span> <span className="text-sm text-zinc-300">{character.tone}</span></div>
-                  <div><span className="text-xs text-zinc-500">Speech:</span> <span className="text-sm text-zinc-300">{character.speechPattern}</span></div>
-                </div>
-              </div>
-              <div className="card p-5 space-y-3">
-                <h3 className="text-xs uppercase tracking-wider text-zinc-500">Worldview</h3>
-                <p className="text-sm text-zinc-300 leading-relaxed">{character.memeWorldview}</p>
-              </div>
-              <div className="card p-5 space-y-3">
-                <h3 className="text-xs uppercase tracking-wider text-zinc-500">Signature Lines</h3>
-                <div className="space-y-1">
-                  {character.signatureLines.map((line, i) => (
-                    <p key={i} className="text-sm text-purple-300 italic">&ldquo;{line}&rdquo;</p>
-                  ))}
-                </div>
-              </div>
-              <div className="card p-5 space-y-3">
-                <h3 className="text-xs uppercase tracking-wider text-zinc-500">Recurring Motifs</h3>
-                <div className="flex flex-wrap gap-2">
-                  {character.recurringMotifs.map((m, i) => (
-                    <span key={i} className="text-xs px-2 py-1 rounded-full bg-purple-500/10 text-purple-300">{m}</span>
-                  ))}
-                </div>
-              </div>
-              <div className="card p-5 space-y-3">
-                <h3 className="text-xs uppercase tracking-wider text-zinc-500">Never Talks About</h3>
-                <div className="flex flex-wrap gap-2">
-                  {character.tabooTopics.map((t, i) => (
-                    <span key={i} className="text-xs px-2 py-1 rounded-full bg-red-500/10 text-red-300">{t}</span>
-                  ))}
-                </div>
-              </div>
-              <div className="card p-5 space-y-3 md:col-span-2">
-                <h3 className="text-xs uppercase tracking-wider text-zinc-500">Visual Style</h3>
-                <p className="text-sm text-zinc-300 leading-relaxed">{character.visualStyle}</p>
-              </div>
+              <p className="max-w-2xl text-sm sm:text-base text-zinc-400">{character.tagline}</p>
+              <div className="status-pill">Character online</div>
             </div>
           </div>
-        )}
+          <div className="flex gap-2">
+            <a href="/gallery" className="btn-secondary text-xs">Gallery</a>
+            <a href="/" className="btn-secondary text-xs">New meme</a>
+          </div>
+        </div>
 
-        {/* Chat Tab */}
-        {tab === 'chat' && (
-          <div className="space-y-3">
-            {chatError && (
-              <ErrorBanner
-                message={chatError}
-                onRetry={() => sendChat(lastChatMsg.current)}
-                onDismiss={() => setChatError(null)}
-              />
-            )}
-            <div className="card p-4 flex flex-col" style={{ height: '500px' }}>
-              <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-2">
-                {data.chatHistory.length === 0 && (
-                  <div className="text-center py-8 space-y-3">
-                    <p className="text-zinc-600 text-sm">
-                      Say something to {character.name}. It&apos;ll respond in character.
-                    </p>
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      {['Tell me your origin story', 'What do you think about Bitcoin?', 'Give me your hottest take'].map(q => (
-                        <button
-                          key={q}
-                          onClick={() => { setChatInput(q); }}
-                          className="text-xs px-3 py-1.5 rounded-full border border-white/10 text-zinc-500 hover:text-white hover:border-purple-500/30 transition-colors"
-                        >
-                          {q}
-                        </button>
-                      ))}
-                    </div>
+        <div className="flex gap-1 overflow-x-auto border-b border-white/5 pb-0">
+          {tabs.map(tabItem => (
+            <button
+              key={tabItem.key}
+              onClick={() => setTab(tabItem.key)}
+              className={`whitespace-nowrap rounded-t-xl px-4 py-2.5 text-sm font-medium transition-colors ${
+                tab === tabItem.key
+                  ? 'border-b-2 border-[#00d4aa] bg-white/[0.03] text-[#9bf4e0]'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              {tabItem.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="min-h-[420px]">
+          {tab === 'character' && (
+            <div className="space-y-4">
+              <div className="card glow-accent p-5 space-y-4">
+                <h3 className="text-xs uppercase tracking-[0.18em] text-[#00d4aa]">Character consistency proof</h3>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <div>
+                    <span className="text-[10px] uppercase tracking-[0.16em] text-zinc-600">Vibe</span>
+                    <p className="mt-2 text-sm font-medium text-white">{character.vibe}</p>
                   </div>
-                )}
-                {data.chatHistory.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] px-4 py-2 text-sm ${
-                      msg.role === 'user' ? 'bubble-user text-purple-100' : 'bubble-meme text-zinc-200'
-                    }`}>
-                      {msg.content}
-                    </div>
+                  <div>
+                    <span className="text-[10px] uppercase tracking-[0.16em] text-zinc-600">Tone</span>
+                    <p className="mt-2 text-sm font-medium text-white">{character.tone}</p>
                   </div>
-                ))}
-                {isSending && (
-                  <div className="flex justify-start">
-                    <div className="bubble-meme px-4 py-2">
-                      <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <div className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <div className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                      </div>
-                    </div>
+                  <div>
+                    <span className="text-[10px] uppercase tracking-[0.16em] text-zinc-600">Catchphrase</span>
+                    <p className="mt-2 text-sm italic text-[#9bf4e0]">“{character.signatureLines[0]}”</p>
                   </div>
-                )}
-                <div ref={chatEndRef} />
+                  <div>
+                    <span className="text-[10px] uppercase tracking-[0.16em] text-zinc-600">Worldview</span>
+                    <p className="mt-2 line-clamp-2 text-sm text-zinc-300">{character.memeWorldview}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setTab('chat'); setChatInput('Tell me your origin story') }}
+                  className="text-xs text-[#9bf4e0] hover:text-white"
+                >
+                  Ask this character about their origin story →
+                </button>
               </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={chatInput}
-                  onChange={e => setChatInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && sendChat()}
-                  placeholder={`Talk to ${character.name}...`}
-                  className="flex-1 bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-purple-500/50"
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="card p-5 space-y-3">
+                  <h3 className="text-xs uppercase tracking-[0.18em] text-zinc-600">Origin story</h3>
+                  <p className="text-sm leading-7 text-zinc-300">{character.originStory}</p>
+                </div>
+                <div className="card p-5 space-y-3">
+                  <h3 className="text-xs uppercase tracking-[0.18em] text-zinc-600">Personality</h3>
+                  <div className="space-y-2 text-sm text-zinc-300">
+                    <p><span className="text-zinc-500">Vibe:</span> {character.vibe}</p>
+                    <p><span className="text-zinc-500">Tone:</span> {character.tone}</p>
+                    <p><span className="text-zinc-500">Speech:</span> {character.speechPattern}</p>
+                  </div>
+                </div>
+                <div className="card p-5 space-y-3">
+                  <h3 className="text-xs uppercase tracking-[0.18em] text-zinc-600">Recurring motifs</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {character.recurringMotifs.map(motif => (
+                      <span key={motif} className="rounded-full border border-[#00d4aa]/12 bg-[#00d4aa]/8 px-2.5 py-1 text-xs text-[#9bf4e0]">
+                        {motif}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="card p-5 space-y-3">
+                  <h3 className="text-xs uppercase tracking-[0.18em] text-zinc-600">Never talks about</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {character.tabooTopics.map(topic => (
+                      <span key={topic} className="rounded-full border border-red-500/12 bg-red-500/8 px-2.5 py-1 text-xs text-red-200">
+                        {topic}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="card p-5 space-y-3 md:col-span-2">
+                  <h3 className="text-xs uppercase tracking-[0.18em] text-zinc-600">Visual style</h3>
+                  <p className="text-sm leading-7 text-zinc-300">{character.visualStyle}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {tab === 'chat' && (
+            <div className="space-y-3">
+              {chatError && (
+                <ErrorBanner
+                  message={chatError}
+                  onRetry={() => sendChat(lastChatMsg.current)}
+                  onDismiss={() => setChatError(null)}
                 />
-                <button onClick={() => sendChat()} disabled={isSending || !chatInput.trim()} className="btn-primary text-sm">
-                  Send
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Images Tab */}
-        {tab === 'images' && (
-          <div className="space-y-4">
-            {imageError && (
-              <ErrorBanner
-                message={imageError}
-                onRetry={generateImages}
-                onDismiss={() => setImageError(null)}
-              />
-            )}
-            {data.images.length === 0 ? (
-              <div className="card p-8 text-center space-y-4">
-                <p className="text-zinc-400 text-sm">No images yet. Generate 3 meme images for {character.name}.</p>
-                <p className="text-xs text-zinc-600">Style: {character.visualStyle}</p>
-                <button
-                  onClick={generateImages}
-                  disabled={isGeneratingImages}
-                  className="btn-primary"
-                >
-                  {isGeneratingImages ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Generating images...
-                    </span>
-                  ) : (
-                    'Generate images'
-                  )}
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {data.images.map((url, i) => (
-                    <div key={i} className="card overflow-hidden group relative">
-                      <img src={url} alt={`${character.name} meme ${i + 1}`} className="w-full aspect-square object-cover" />
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm font-medium"
-                      >
-                        Open full size
-                      </a>
-                    </div>
-                  ))}
-                </div>
-                <div className="text-center">
-                  <button
-                    onClick={generateImages}
-                    disabled={isGeneratingImages}
-                    className="btn-secondary text-sm"
-                  >
-                    {isGeneratingImages ? 'Regenerating...' : 'Regenerate images'}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Content Feed Tab */}
-        {tab === 'content' && (
-          <div className="space-y-3">
-            {contentError && (
-              <ErrorBanner
-                message={contentError}
-                onRetry={generateMoreContent}
-                onDismiss={() => setContentError(null)}
-              />
-            )}
-            {data.contentFeed.length === 0 ? (
-              <div className="card p-8 text-center space-y-4">
-                <p className="text-zinc-400 text-sm">No content yet.</p>
-                <button
-                  onClick={generateMoreContent}
-                  disabled={isGeneratingContent}
-                  className="btn-primary"
-                >
-                  {isGeneratingContent ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Generating...
-                    </span>
-                  ) : (
-                    'Generate content'
-                  )}
-                </button>
-              </div>
-            ) : (
-              <>
-                {data.contentFeed.map((post, i) => (
-                  <div key={i} className="card p-4 card-hover cursor-pointer" onClick={() => copyText(post.content, `post-${i}`)}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <span className="text-[10px] uppercase tracking-wider text-zinc-600">{post.type}</span>
-                        <p className="text-sm text-zinc-200 mt-1">{post.content}</p>
-                      </div>
-                      <span className="text-[10px] text-zinc-600 whitespace-nowrap">
-                        {copied === `post-${i}` ? 'Copied!' : 'Click to copy'}
-                      </span>
+              )}
+              <div className="card p-4" style={{ height: '560px' }}>
+                <div className="flex h-full flex-col">
+                  <div className="mb-4 flex items-center gap-3 border-b border-white/5 pb-4">
+                    <PersonaAvatar character={character} imageUrl={avatarImage} compact />
+                    <div>
+                      <p className="text-sm font-medium text-white">{character.name}</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-[#00d4aa]">Responsive life signal</p>
                     </div>
                   </div>
-                ))}
-                <div className="text-center pt-2">
-                  <button
-                    onClick={generateMoreContent}
-                    disabled={isGeneratingContent}
-                    className="btn-secondary text-sm"
-                  >
-                    {isGeneratingContent ? (
-                      <span className="flex items-center gap-2">
-                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Generating more...
-                      </span>
-                    ) : (
-                      'Generate more posts'
+
+                  <div className="mb-4 flex-1 space-y-3 overflow-y-auto pr-2">
+                    {data.chatHistory.length === 0 && (
+                      <div className="space-y-3 py-8 text-center">
+                        <p className="text-sm text-zinc-500">
+                          Speak first. VIVID will hold the character in persona before answering.
+                        </p>
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {['Tell me your origin story', 'What do you think about Bitcoin?', 'Give me your hottest take'].map(question => (
+                            <button
+                              key={question}
+                              onClick={() => setChatInput(question)}
+                              className="suggestion-pill"
+                            >
+                              {question}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     )}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
 
-        {/* Export / Launch Tab */}
-        {tab === 'export' && (
-          <div className="space-y-4">
-            <div className="card p-5 glow-purple space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-white">Four.meme Launch Package</h3>
-                <button
-                  onClick={copyAllLaunch}
-                  className="text-xs px-3 py-1.5 rounded bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-colors"
-                >
-                  {copied === 'all-launch' ? 'Copied all!' : 'Copy entire kit'}
-                </button>
-              </div>
-              <p className="text-xs text-zinc-500">Copy each field into Four.meme&apos;s create form, or copy the entire kit at once.</p>
+                    {data.chatHistory.map((message, index) => (
+                      <div key={`${message.role}-${index}`} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} gap-3`}>
+                        {message.role === 'assistant' && (
+                          <PersonaAvatar character={character} imageUrl={avatarImage} compact />
+                        )}
+                        <div className={`max-w-[80%] px-4 py-3 text-sm leading-7 ${
+                          message.role === 'user'
+                            ? 'bubble-user text-[#dffcf6]'
+                            : `bubble-meme text-zinc-200 ${personaFontClass}`
+                        }`}>
+                          {message.content}
+                        </div>
+                      </div>
+                    ))}
 
-              {[
-                { label: 'Name', value: character.name },
-                { label: 'Ticker', value: character.ticker },
-                { label: 'Description', value: `${character.tagline}\n\n${character.originStory}\n\n${character.memeWorldview}` },
-                { label: 'Launch Post', value: character.launchCopy },
-              ].map(field => (
-                <div key={field.label} className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs text-zinc-500">{field.label}</label>
-                    <button
-                      onClick={() => copyText(field.value, field.label)}
-                      className="text-[10px] text-purple-400 hover:text-purple-300"
-                    >
-                      {copied === field.label ? 'Copied!' : 'Copy'}
+                    {showTypingIndicator && (
+                      <div className="flex justify-start gap-3">
+                        <PersonaAvatar character={character} imageUrl={avatarImage} compact />
+                        <div className={`bubble-meme flex items-center gap-2 px-4 py-3 ${personaFontClass}`}>
+                          <span className="typing-dot" />
+                          <span className="typing-dot" />
+                          <span className="typing-dot" />
+                        </div>
+                      </div>
+                    )}
+                    <div ref={chatEndRef} />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={chatInput}
+                      onChange={event => setChatInput(event.target.value)}
+                      onKeyDown={event => event.key === 'Enter' && sendChat()}
+                      placeholder={`Talk to ${character.name}...`}
+                      className="flex-1 rounded-[16px] border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#00d4aa]/45"
+                    />
+                    <button onClick={() => sendChat()} disabled={isSending || !chatInput.trim()} className="btn-primary text-sm">
+                      Send
                     </button>
                   </div>
-                  <div className="bg-black/30 border border-white/5 rounded-lg px-3 py-2 text-sm text-zinc-300 whitespace-pre-wrap">
-                    {field.value}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {tab === 'images' && (
+            <div className="space-y-4">
+              {imageError && (
+                <ErrorBanner
+                  message={imageError}
+                  onRetry={generateImages}
+                  onDismiss={() => setImageError(null)}
+                />
+              )}
+
+              {isGeneratingImages ? (
+                <div className="space-y-4">
+                  <div className="card p-5 space-y-2">
+                    <p className="text-xs uppercase tracking-[0.18em] text-[#00d4aa]">Visual cortex online</p>
+                    <p className="text-sm text-zinc-400">
+                      Rendering three candidate surfaces for {character.name}. They will sharpen into focus as the organism stabilizes.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <div key={index} className="image-shell" />
+                    ))}
                   </div>
                 </div>
-              ))}
+              ) : data.images.length === 0 ? (
+                <div className="card p-8 text-center space-y-4">
+                  <p className="text-sm text-zinc-400">No visuals yet. Generate 3 meme images for {character.name}.</p>
+                  <p className="text-xs text-zinc-600">Style anchor: {character.visualStyle}</p>
+                  <button onClick={generateImages} className="btn-primary">
+                    Generate images
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    {data.images.map((url, index) => {
+                      const loaded = loadedImages.includes(url)
+                      return (
+                        <div key={url} className="card group relative overflow-hidden">
+                          <img
+                            src={url}
+                            alt={`${character.name} meme ${index + 1}`}
+                            onLoad={() => setLoadedImages(prev => prev.includes(url) ? prev : [...prev, url])}
+                            className={`image-focus aspect-square w-full object-cover ${loaded ? 'image-focus-loaded' : ''}`}
+                          />
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="absolute inset-0 flex items-center justify-center bg-black/60 text-sm font-medium text-white opacity-0 transition-opacity group-hover:opacity-100"
+                          >
+                            Open full size
+                          </a>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="text-center">
+                    <button onClick={generateImages} className="btn-secondary text-sm">
+                      Regenerate images
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
+          )}
 
-            {data.images.length > 0 && (
-              <div className="card p-5 space-y-3">
-                <h3 className="text-sm font-semibold text-white">Profile Image</h3>
-                <p className="text-xs text-zinc-500">Right click to save, then upload to Four.meme.</p>
-                <div className="grid grid-cols-3 gap-3">
-                  {data.images.map((url, i) => (
-                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border-2 border-transparent hover:border-purple-500 transition-colors">
-                      <img src={url} alt={`Option ${i + 1}`} className="w-full aspect-square object-cover" />
-                    </a>
+          {tab === 'content' && (
+            <div className="space-y-3">
+              {contentError && (
+                <ErrorBanner
+                  message={contentError}
+                  onRetry={generateMoreContent}
+                  onDismiss={() => setContentError(null)}
+                />
+              )}
+
+              {data.contentFeed.length === 0 ? (
+                <div className="card p-8 text-center space-y-4">
+                  <p className="text-sm text-zinc-400">No content yet.</p>
+                  <button onClick={generateMoreContent} disabled={isGeneratingContent} className="btn-primary">
+                    {isGeneratingContent ? 'Growing content feed...' : 'Generate content'}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {data.contentFeed.map((post, index) => (
+                    <div key={`${post.type}-${index}`} className="card card-hover cursor-pointer p-4" onClick={() => copyText(post.content, `post-${index}`)}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <span className="text-[10px] uppercase tracking-[0.18em] text-zinc-600">{post.type}</span>
+                          <p className="mt-2 text-sm leading-7 text-zinc-200">{post.content}</p>
+                        </div>
+                        <span className="whitespace-nowrap text-[10px] text-zinc-600">
+                          {copied === `post-${index}` ? 'Copied!' : 'Click to copy'}
+                        </span>
+                      </div>
+                    </div>
                   ))}
+                  <div className="pt-2 text-center">
+                    <button onClick={generateMoreContent} disabled={isGeneratingContent} className="btn-secondary text-sm">
+                      {isGeneratingContent ? 'Generating more...' : 'Generate more posts'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {tab === 'export' && (
+            <div className="space-y-4">
+              <div className="card glow-accent p-5 space-y-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-[0.18em] text-[#00d4aa]">Launch staging</p>
+                    <h3 className="text-2xl font-semibold tracking-[-0.03em] text-white">Export this lifeform to Four.meme</h3>
+                    <p className="max-w-2xl text-sm leading-6 text-zinc-400">
+                      This export flow packages the meme’s token name, selected image, origin lore, and launch copy into one decisive final step.
+                    </p>
+                  </div>
+                  <button onClick={() => setShowExportModal(true)} className="btn-primary btn-deploy">
+                    Export to Four.meme
+                  </button>
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-[0.7fr_1.3fr]">
+                  <div className="card p-4 space-y-3">
+                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-600">Primary visual</p>
+                    {avatarImage ? (
+                      <img src={avatarImage} alt={`${character.name} preview`} className="aspect-square w-full rounded-[16px] object-cover" />
+                    ) : (
+                      <div className="flex aspect-square w-full items-center justify-center rounded-[16px] bg-[radial-gradient(circle_at_30%_30%,rgba(36,241,197,0.25),rgba(0,212,170,0.08),transparent_70%)] text-6xl font-semibold text-[#00d4aa]">
+                        {character.name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="card p-5 space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.18em] text-zinc-600">Token</p>
+                        <h4 className="mt-2 text-xl font-semibold text-white">{character.name}</h4>
+                      </div>
+                      <span className="rounded-full border border-[#00d4aa]/14 bg-[#00d4aa]/8 px-3 py-1 text-xs tracking-[0.18em] text-[#9bf4e0]">
+                        ${character.ticker}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs text-zinc-500">Launch post</label>
+                        <button onClick={() => copyText(character.launchCopy, 'Launch Post')} className="text-[10px] text-[#9bf4e0] hover:text-white">
+                          {copied === 'Launch Post' ? 'Copied!' : 'Copy'}
+                        </button>
+                      </div>
+                      <div className="rounded-[16px] border border-white/6 bg-black/25 px-4 py-3 text-sm leading-7 text-zinc-300">
+                        {character.launchCopy}
+                      </div>
+                    </div>
+
+                    <button onClick={copyAllLaunch} className="btn-secondary w-full">
+                      {copied === 'all-launch' ? 'Copied all!' : 'Copy entire kit'}
+                    </button>
+                  </div>
                 </div>
               </div>
-            )}
-
-            <div className="card p-5 space-y-3">
-              <h3 className="text-sm font-semibold text-white">Tokenomics Notes</h3>
-              <div className="bg-black/30 border border-white/5 rounded-lg px-3 py-2 text-sm text-zinc-300 space-y-1">
-                <p>Total Supply: 1,000,000,000 ${character.ticker}</p>
-                <p>Initial Liquidity: set via Four.meme defaults</p>
-                <p>No pre-sale, no team allocation. Fair launch.</p>
-              </div>
             </div>
-
-            <a
-              href="https://four.meme/create"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary block text-center"
-            >
-              Open Four.meme Create Page
-            </a>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+
+      <DeployModal
+        open={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        character={character}
+        images={data.images}
+        selectedImageIndex={selectedImageIndex}
+        onSelectImage={setSelectedImageIndex}
+        onCopyKit={copyAllLaunch}
+      />
+    </>
   )
 }

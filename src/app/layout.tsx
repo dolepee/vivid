@@ -13,20 +13,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen antialiased">
-        <header className="border-b border-white/5 px-6 py-4">
-          <div className="max-w-5xl mx-auto flex items-center justify-between">
+      <body className="min-h-screen antialiased bg-[#0a0a0a]">
+        <header className="sticky top-0 z-40 border-b border-white/5 bg-black/30 px-6 py-4 backdrop-blur-xl">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
             <a href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-sm">V</div>
+              <div className="avatar-orb w-9 h-9 rounded-xl bg-[radial-gradient(circle_at_30%_30%,#24f1c5,#00d4aa_52%,#04241f)] flex items-center justify-center text-[#03120e] font-bold text-sm">
+                V
+              </div>
               <span className="font-bold text-lg text-white">VIVID</span>
             </a>
             <div className="flex items-center gap-4">
-              <a href="/gallery" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">Gallery</a>
-              <span className="text-xs text-zinc-600">Living Meme AI</span>
+              <a href="/gallery" className="text-xs text-zinc-500 hover:text-[#b8fff0] transition-colors">Gallery</a>
+              <span className="status-pill hidden sm:inline-flex">Living Meme AI</span>
             </div>
           </div>
         </header>
-        <main className="max-w-5xl mx-auto px-6 py-8">
+        <main className="max-w-6xl mx-auto px-6 py-8">
           {children}
         </main>
       </body>
