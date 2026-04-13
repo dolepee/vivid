@@ -21,8 +21,8 @@ The core insight: every output (lore, chat replies, images, tweets, launch copy)
 ```
 Next.js 16 App Router
   |
-  +-- /api/generate    CharacterSpec + content feed (Bankr / DeepSeek V3.2)
-  +-- /api/chat         In-character conversation (Bankr / DeepSeek V3.2)
+  +-- /api/generate    CharacterSpec + content feed (DGrid / GPT-4o-mini)
+  +-- /api/chat         In-character conversation (DGrid / GPT-4o-mini)
   +-- /api/content      Generate more social posts on demand
   +-- /api/images       3 meme images (Pollinations.ai, free)
   +-- /api/session      Session retrieval
@@ -31,7 +31,7 @@ Next.js 16 App Router
   +-- Zod               Schema validation on all AI outputs
 ```
 
-- **AI:** Bankr LLM Gateway routing to DeepSeek V3.2 (~$0.0008 per full generation)
+- **AI:** DGrid decentralized inference gateway routing to GPT-4o-mini
 - **Images:** Pollinations.ai (free, no API key, seed-based variation)
 - **Storage:** Upstash Redis via Vercel KV integration (sessions persist across deploys)
 - **Validation:** Zod schemas on CharacterSpec and ContentPost; malformed AI output triggers retry, then clean error
@@ -43,7 +43,7 @@ git clone https://github.com/dolepee/vivid.git
 cd vivid
 npm install
 cp .env.local.example .env.local
-# Fill in your Bankr LLM key and Upstash Redis credentials
+# Fill in your DGrid API key and Upstash Redis credentials
 npm run dev
 ```
 
@@ -59,7 +59,7 @@ npm run dev
 ## Stack
 
 - Next.js 16, React 19, Tailwind CSS 4
-- Bankr LLM Gateway (DeepSeek V3.2)
+- DGrid AI Gateway (GPT-4o-mini via decentralized inference)
 - Pollinations.ai (image generation)
 - Upstash Redis (Vercel KV)
 - Zod (runtime validation)

@@ -1,11 +1,10 @@
 import OpenAI from 'openai'
 
-/** Bankr LLM gateway — primary client. */
+/** DGrid AI gateway — OpenAI-compatible inference. */
 export const ai = new OpenAI({
-  baseURL: 'https://llm.bankr.bot/v1',
-  apiKey: process.env.BANKR_LLM_KEY,
-  defaultHeaders: { 'X-API-Key': process.env.BANKR_LLM_KEY || '' },
+  baseURL: 'https://api.dgrid.ai/v1',
+  apiKey: process.env.DGRID_API_KEY,
 })
 
-/** Default text model. */
-export const TEXT_MODEL = 'deepseek-v3.2'
+/** Default text model (ChatGPT via DGrid). */
+export const TEXT_MODEL = 'openai/gpt-4o-mini'
