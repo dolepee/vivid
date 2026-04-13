@@ -7,4 +7,4 @@ export const ai = new OpenAI({
 })
 
 /** Default text model (ChatGPT via DGrid). */
-export const TEXT_MODEL = 'openai/gpt-4o-mini'
+export const TEXT_MODEL = 'openai/gpt-4o'
