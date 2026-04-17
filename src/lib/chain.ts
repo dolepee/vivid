@@ -17,5 +17,7 @@ export const BNB_TESTNET_PARAMS = {
 export const VIVID_SOUL_REGISTRY_ADDRESS =
   process.env.NEXT_PUBLIC_VIVID_SOUL_REGISTRY_ADDRESS as `0x${string}` | undefined
 
-export const TELEGRAM_BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
+export const VIVID_DEMO_SOUL_TX_HASH =
+  process.env.NEXT_PUBLIC_VIVID_DEMO_SOUL_TX_HASH as `0x${string}` | undefined
 
+export const TELEGRAM_BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME

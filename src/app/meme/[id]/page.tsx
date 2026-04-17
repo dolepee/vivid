@@ -7,6 +7,7 @@ import {
   BNB_TESTNET_PARAMS,
   BNB_TESTNET_EXPLORER,
   TELEGRAM_BOT_USERNAME,
+  VIVID_DEMO_SOUL_TX_HASH,
   VIVID_SOUL_REGISTRY_ADDRESS,
 } from '@/lib/chain'
 import { buildSoulPayload, hashSoulPayload, telegramStartParam } from '@/lib/soul'
@@ -600,6 +601,9 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
   const telegramLink = TELEGRAM_BOT_USERNAME
     ? `https://t.me/${TELEGRAM_BOT_USERNAME}?start=${telegramStartParam(character.id)}`
     : null
+  const proofTxHash = anchorTxHash || (
+    character.id === 'vivid-demo-pandaudit' ? VIVID_DEMO_SOUL_TX_HASH || null : null
+  )
   const avatarState: AvatarState = showExportModal
     ? 'launch'
     : isGeneratingImages || isGeneratingContent
@@ -627,7 +631,7 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
 
   const sectionLinks = [
     { href: '#identity', label: 'Identity', value: 'Genome locked' },
-    { href: '#proof', label: 'Proof', value: anchorTxHash ? 'BNB anchored' : 'Hash ready' },
+    { href: '#proof', label: 'Proof', value: proofTxHash ? 'BNB anchored' : 'Hash ready' },
     { href: '#chat', label: 'Talk', value: `${data.chatHistory.length} msgs` },
     { href: '#visuals', label: 'Visuals', value: `${data.images.length}/3 frames` },
     { href: '#feed', label: 'Feed', value: `${data.contentFeed.length} outputs` },
@@ -855,7 +859,7 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
                     <div className="rounded-2xl border border-white/6 bg-white/[0.02] p-4">
                       <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-600">Status</p>
                       <p className="mt-2 text-sm text-white">
-                        {anchorTxHash ? 'Anchored' : 'Hash ready'}
+                        {proofTxHash ? 'Anchored' : 'Hash ready'}
                       </p>
                     </div>
                   </div>
@@ -870,9 +874,9 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
                     <button onClick={anchorSoul} disabled={isAnchoringSoul} className="btn-primary">
                       {isAnchoringSoul ? 'Waiting for wallet...' : 'Anchor soul on BNB'}
                     </button>
-                    {anchorTxHash ? (
+                    {proofTxHash ? (
                       <a
-                        href={`${BNB_TESTNET_EXPLORER}/tx/${anchorTxHash}`}
+                        href={`${BNB_TESTNET_EXPLORER}/tx/${proofTxHash}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn-secondary text-center"
