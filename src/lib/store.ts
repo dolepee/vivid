@@ -8,6 +8,7 @@ const redis = new Redis({
 
 const SESSION_KEY = (id: string) => `session:${id}`
 const INDEX_KEY = 'sessions:index'
+const TELEGRAM_BINDING_KEY = (chatId: string) => `telegram:${chatId}:meme`
 const TTL = 60 * 60 * 24 * 30 // 30 days
 
 export async function createSession(character: CharacterSpec): Promise<MemeSession> {
@@ -59,6 +60,15 @@ export async function addContentPosts(id: string, posts: ContentPost[]): Promise
     ...s,
     contentFeed: [...s.contentFeed, ...posts],
   }))
+}
+
+export async function bindTelegramChat(chatId: string, memeId: string): Promise<void> {
+  await redis.set(TELEGRAM_BINDING_KEY(chatId), memeId, { ex: TTL })
+}
+
+export async function getTelegramBinding(chatId: string): Promise<string | null> {
+  const data = await redis.get<string>(TELEGRAM_BINDING_KEY(chatId))
+  return typeof data === 'string' ? data : null
 }
 
 export async function getAllSessions(): Promise<MemeSession[]> {

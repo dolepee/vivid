@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { CharacterSpec } from '@/lib/types'
 
@@ -235,9 +236,9 @@ export default function Home() {
                   <span className="block text-[#f3ba2f]">Incubate a lifeform.</span>
                 </h1>
                 <p className="max-w-2xl text-base leading-8 text-zinc-400 sm:text-lg">
-                  VIVID takes one concept and hardens it into a single canonical character spec,
-                  then derives chat voice, images, launch copy, and Four.meme export from that same
-                  living core.
+                  VIVID takes one concept and hardens it into a canonical character spec, then
+                  derives chat voice, images, launch copy, Telegram activation, and BNB soul proof
+                  from that same living core.
                 </p>
               </div>
             </div>
@@ -256,7 +257,7 @@ export default function Home() {
                     'Signal enters the prompt chamber',
                     'VIVID assembles a canonical identity',
                     'Visuals and voice are derived from one genome',
-                    'Launch package exits ready for Four.meme',
+                    'Soul hash anchors on BNB and exits ready for Four.meme',
                   ].map((item, index) => (
                     <div key={item} className="flex items-start gap-3 rounded-2xl border border-white/6 bg-white/[0.02] p-4">
                       <span className="mt-1 flex h-6 w-6 items-center justify-center rounded-full border border-[#f3ba2f]/14 bg-[#f3ba2f]/10 text-[11px] font-medium text-[#ffe29a]">
@@ -307,7 +308,7 @@ export default function Home() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="max-w-xl text-sm text-zinc-500">
                 VIVID does not improvise each artifact separately. It locks a single character
-                genome first, then everything downstream has to obey it.
+                genome first, then every downstream surface has to obey it.
               </p>
               <button
                 onClick={handleGenerate}
@@ -354,12 +355,15 @@ export default function Home() {
                   Recently created
                 </h2>
               </div>
-              <a href="/gallery" className="btn-secondary text-xs">Open gallery</a>
+              <div className="flex gap-2">
+                <Link href="/demo" className="btn-secondary text-xs">Judge demo</Link>
+                <Link href="/gallery" className="btn-secondary text-xs">Open gallery</Link>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {featured.map(meme => (
-                <a
+                <Link
                   key={meme.id}
                   href={`/meme/${meme.id}`}
                   className="card card-hover block space-y-3 p-5"
@@ -376,7 +380,7 @@ export default function Home() {
                     </span>
                   </div>
                   <p className="text-sm leading-6 text-zinc-400">{meme.tagline}</p>
-                </a>
+                </Link>
               ))}
             </div>
           </section>

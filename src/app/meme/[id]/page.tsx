@@ -1,6 +1,16 @@
 'use client'
 
-import { use, useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
+import { use, useEffect, useRef, useState } from 'react'
+import { encodeFunctionData } from 'viem'
+import {
+  BNB_TESTNET_PARAMS,
+  BNB_TESTNET_EXPLORER,
+  TELEGRAM_BOT_USERNAME,
+  VIVID_SOUL_REGISTRY_ADDRESS,
+} from '@/lib/chain'
+import { buildSoulPayload, hashSoulPayload, telegramStartParam } from '@/lib/soul'
+import { VIVID_SOUL_REGISTRY_ABI } from '@/lib/soul-registry'
 import type { CharacterSpec, ChatMessage, ContentPost } from '@/lib/types'
 
 interface MemeData {
@@ -11,6 +21,16 @@ interface MemeData {
 }
 
 type AvatarState = 'idle' | 'thinking' | 'rendering' | 'launch'
+
+interface EthereumProvider {
+  request(args: { method: string; params?: unknown[] }): Promise<unknown>
+}
+
+declare global {
+  interface Window {
+    ethereum?: EthereumProvider
+  }
+}
 
 function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
@@ -257,9 +277,17 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
   const [showExportModal, setShowExportModal] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [loadedImages, setLoadedImages] = useState<string[]>([])
+  const [origin, setOrigin] = useState('')
+  const [isAnchoringSoul, setIsAnchoringSoul] = useState(false)
+  const [anchorTxHash, setAnchorTxHash] = useState<`0x${string}` | null>(null)
+  const [anchorError, setAnchorError] = useState<string | null>(null)
 
   const chatEndRef = useRef<HTMLDivElement>(null)
   const lastChatMsg = useRef<string>('')
+
+  useEffect(() => {
+    setOrigin(window.location.origin)
+  }, [])
 
   useEffect(() => {
     fetch(`/api/session?id=${id}`)
@@ -449,6 +477,92 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
     copyText(all, 'all-launch')
   }
 
+  const switchToBnbTestnet = async () => {
+    if (!window.ethereum) throw new Error('Wallet not found')
+
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: BNB_TESTNET_PARAMS.chainId }],
+      })
+    } catch (error) {
+      const maybeCode = error && typeof error === 'object' && 'code' in error
+        ? (error as { code?: number }).code
+        : undefined
+
+      if (maybeCode !== 4902) throw error
+
+      await window.ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [BNB_TESTNET_PARAMS],
+      })
+    }
+  }
+
+  const anchorSoul = async () => {
+    if (!data) return
+
+    if (!VIVID_SOUL_REGISTRY_ADDRESS) {
+      setAnchorError('Soul registry contract is not configured yet. Deploy it and set NEXT_PUBLIC_VIVID_SOUL_REGISTRY_ADDRESS.')
+      return
+    }
+
+    if (!window.ethereum) {
+      setAnchorError('Connect an EVM wallet to anchor this soul on BNB testnet.')
+      return
+    }
+
+    setAnchorError(null)
+    setIsAnchoringSoul(true)
+
+    try {
+      const accounts = (await window.ethereum.request({
+        method: 'eth_requestAccounts',
+      })) as string[]
+
+      if (!accounts?.[0]) {
+        setAnchorError('No wallet account returned.')
+        return
+      }
+
+      await switchToBnbTestnet()
+
+      const metadataURI = `${origin || window.location.origin}/api/soul/metadata?id=${data.character.id}`
+      const soulHash = hashSoulPayload(
+        buildSoulPayload(data.character, data.images, data.contentFeed)
+      )
+      const txData = encodeFunctionData({
+        abi: VIVID_SOUL_REGISTRY_ABI,
+        functionName: 'anchorSoul',
+        args: [
+          data.character.id,
+          data.character.name,
+          data.character.ticker,
+          metadataURI,
+          soulHash,
+        ],
+      })
+
+      const txHash = (await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [
+          {
+            from: accounts[0],
+            to: VIVID_SOUL_REGISTRY_ADDRESS,
+            data: txData,
+          },
+        ],
+      })) as `0x${string}`
+
+      setAnchorTxHash(txHash)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Soul anchoring failed.'
+      setAnchorError(message)
+    } finally {
+      setIsAnchoringSoul(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="card hero-surface flex min-h-[340px] items-center justify-center p-10">
@@ -470,9 +584,9 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
       <div className="card p-12 text-center space-y-4">
         <p className="text-sm uppercase tracking-[0.18em] text-zinc-600">No lifeform found</p>
         <h2 className="text-2xl font-semibold text-white">This meme is missing or expired.</h2>
-        <a href="/" className="btn-primary inline-block">
+        <Link href="/" className="btn-primary inline-block">
           Create a new meme
-        </a>
+        </Link>
       </div>
     )
   }
@@ -480,6 +594,12 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
   const { character } = data
   const personaFontClass = getPersonaFontClass(character)
   const avatarImage = data.images[selectedImageIndex] || data.images[0]
+  const soulPayload = buildSoulPayload(character, data.images, data.contentFeed)
+  const soulHash = hashSoulPayload(soulPayload)
+  const metadataUrl = `${origin || ''}/api/soul/metadata?id=${character.id}`
+  const telegramLink = TELEGRAM_BOT_USERNAME
+    ? `https://t.me/${TELEGRAM_BOT_USERNAME}?start=${telegramStartParam(character.id)}`
+    : null
   const avatarState: AvatarState = showExportModal
     ? 'launch'
     : isGeneratingImages || isGeneratingContent
@@ -507,6 +627,7 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
 
   const sectionLinks = [
     { href: '#identity', label: 'Identity', value: 'Genome locked' },
+    { href: '#proof', label: 'Proof', value: anchorTxHash ? 'BNB anchored' : 'Hash ready' },
     { href: '#chat', label: 'Talk', value: `${data.chatHistory.length} msgs` },
     { href: '#visuals', label: 'Visuals', value: `${data.images.length}/3 frames` },
     { href: '#feed', label: 'Feed', value: `${data.contentFeed.length} outputs` },
@@ -594,12 +715,12 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
                 {copied === 'all-launch' ? 'Copied entire kit' : 'Copy entire kit'}
               </button>
               <div className="grid grid-cols-2 gap-2">
-                <a href="/gallery" className="btn-secondary text-center text-xs">
+                <Link href="/gallery" className="btn-secondary text-center text-xs">
                   Gallery
-                </a>
-                <a href="/" className="btn-secondary text-center text-xs">
+                </Link>
+                <Link href="/" className="btn-secondary text-center text-xs">
                   New meme
-                </a>
+                </Link>
               </div>
             </div>
           </div>
@@ -685,6 +806,130 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
                 <div className="card p-5 space-y-3 md:col-span-2">
                   <h3 className="text-xs uppercase tracking-[0.18em] text-zinc-600">Visual style anchor</h3>
                   <p className="text-sm leading-7 text-zinc-300">{character.visualStyle}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="proof" className="section-shell">
+            <div className="card glow-accent p-5 sm:p-6 space-y-5">
+              <div className="section-heading">
+                <div>
+                  <p>System action</p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white">
+                    Anchor the soul, activate the meme
+                  </h2>
+                </div>
+                <span className="rounded-full border border-[#f3ba2f]/14 bg-[#f3ba2f]/8 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-[#ffe29a]">
+                  BNB proof loop
+                </span>
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+                <div className="card p-5 space-y-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.18em] text-zinc-600">
+                        Deterministic soul hash
+                      </p>
+                      <p className="mt-2 break-all font-mono text-xs leading-6 text-[#ffe29a]">
+                        {soulHash}
+                      </p>
+                    </div>
+                    <button onClick={() => copyText(soulHash, 'soul-hash')} className="btn-secondary text-xs">
+                      {copied === 'soul-hash' ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-2xl border border-white/6 bg-white/[0.02] p-4">
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-600">Chain</p>
+                      <p className="mt-2 text-sm text-white">BNB Testnet</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/6 bg-white/[0.02] p-4">
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-600">Registry</p>
+                      <p className="mt-2 truncate font-mono text-xs text-white">
+                        {VIVID_SOUL_REGISTRY_ADDRESS || 'pending deploy'}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-white/6 bg-white/[0.02] p-4">
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-600">Status</p>
+                      <p className="mt-2 text-sm text-white">
+                        {anchorTxHash ? 'Anchored' : 'Hash ready'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {anchorError && (
+                    <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-sm leading-6 text-red-300">
+                      {anchorError}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <button onClick={anchorSoul} disabled={isAnchoringSoul} className="btn-primary">
+                      {isAnchoringSoul ? 'Waiting for wallet...' : 'Anchor soul on BNB'}
+                    </button>
+                    {anchorTxHash ? (
+                      <a
+                        href={`${BNB_TESTNET_EXPLORER}/tx/${anchorTxHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-secondary text-center"
+                      >
+                        View BscScan proof
+                      </a>
+                    ) : (
+                      <a
+                        href={metadataUrl || `/api/soul/metadata?id=${character.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-secondary text-center"
+                      >
+                        View metadata
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                <div className="card p-5 space-y-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-600">
+                      Telegram activation
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold text-white">
+                      Let {character.name} speak outside the app
+                    </h3>
+                    <p className="mt-3 text-sm leading-7 text-zinc-400">
+                      The same character spec powers a Telegram webhook, so holders can talk to the
+                      meme in character after launch.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/6 bg-white/[0.02] p-4">
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-zinc-600">
+                      Start parameter
+                    </p>
+                    <p className="mt-2 break-all font-mono text-xs text-[#ffe29a]">
+                      {telegramStartParam(character.id)}
+                    </p>
+                  </div>
+
+                  {telegramLink ? (
+                    <a
+                      href={telegramLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-primary block text-center"
+                    >
+                      Activate Telegram persona
+                    </a>
+                  ) : (
+                    <div className="rounded-2xl border border-[#f3ba2f]/14 bg-[#f3ba2f]/6 p-4 text-sm leading-7 text-[#ffe29a]">
+                      Set NEXT_PUBLIC_TELEGRAM_BOT_USERNAME and TELEGRAM_BOT_TOKEN to turn this into
+                      a live Telegram activation link.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

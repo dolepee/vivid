@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect } from 'react'
 
 interface MemeSummary {
@@ -48,18 +49,18 @@ export default function GalleryPage() {
           <h1 className="text-3xl font-bold text-white">Gallery</h1>
           <p className="text-zinc-500 text-sm mt-1">{memes.length} meme{memes.length !== 1 ? 's' : ''} created</p>
         </div>
-        <a href="/" className="btn-primary text-sm">New meme</a>
+        <Link href="/" className="btn-primary text-sm">New meme</Link>
       </div>
 
       {memes.length === 0 ? (
         <div className="card p-12 text-center space-y-4">
           <p className="text-zinc-400">No memes created yet.</p>
-          <a href="/" className="btn-primary inline-block">Create your first meme</a>
+          <Link href="/" className="btn-primary inline-block">Create your first meme</Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {memes.map(meme => (
-            <a key={meme.id} href={`/meme/${meme.id}`} className="card card-hover p-5 space-y-3 block transition-transform hover:scale-[1.01]">
+            <Link key={meme.id} href={`/meme/${meme.id}`} className="card card-hover p-5 space-y-3 block transition-transform hover:scale-[1.01]">
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-lg font-bold text-white">{meme.name}</h2>
@@ -73,7 +74,7 @@ export default function GalleryPage() {
                 {meme.postCount > 0 && <span>{meme.postCount} posts</span>}
                 {meme.chatCount > 0 && <span>{meme.chatCount} messages</span>}
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       )}
