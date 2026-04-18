@@ -7,6 +7,16 @@ function cleanFragment(value?: string) {
     .trim()
 }
 
+function sentenceCase(value: string) {
+  if (!value) return value
+  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`
+}
+
+function isPluralPhrase(value: string) {
+  const lastWord = value.split(/\s+/).at(-1)?.toLowerCase() || ''
+  return lastWord.endsWith('s') && !lastWord.endsWith('ss')
+}
+
 function motif(character: CharacterSpec, index: number, fallback: string) {
   return cleanFragment(character.recurringMotifs[index]) || fallback
 }
@@ -20,11 +30,12 @@ export function quickPersonaReply(character: CharacterSpec, message: string) {
   const ticker = `$${character.ticker}`
   const primaryMotif = motif(character, 0, 'receipts')
   const secondaryMotif = motif(character, 1, 'the ledger')
+  const secondaryVerb = isPluralPhrase(secondaryMotif) ? 'are' : 'is'
   const firstLine = signature(character, 0)
   const secondLine = signature(character, 1)
 
   if (/^(gm|good morning)\b/.test(normalized)) {
-    return `gm. ${firstLine}. ${character.name} is awake, the ${secondaryMotif} is open, and suspicious contracts are already sweating.`
+    return `gm. ${firstLine}. ${character.name} is awake, the ${secondaryMotif} ${secondaryVerb} open, and suspicious contracts are already sweating.`
   }
 
   if (/^(nice|cool|ok|okay|lol|lmao|haha|good)\b/.test(normalized)) {
@@ -35,7 +46,7 @@ export function quickPersonaReply(character: CharacterSpec, message: string) {
     return [
       `1. ${firstLine}. ${ticker}`,
       `2. If the chart is loud but the receipts are quiet, call ${character.name}. ${ticker}`,
-      `3. ${primaryMotif} on the table, ${secondaryMotif} in the logs. No fake conviction today. ${ticker}`,
+      `3. ${sentenceCase(primaryMotif)} on the table, ${secondaryMotif} in the logs. No fake conviction today. ${ticker}`,
     ].join('\n')
   }
 
