@@ -3,6 +3,7 @@ import { ai, TEXT_MODEL } from '@/lib/ai'
 import { CHAT_INTENT_DIRECTIVE, SYSTEM_CHAT } from '@/lib/prompts'
 import { getSession, addChatMessage } from '@/lib/store'
 import { isWeakChatReply } from '@/lib/quality'
+import { quickPersonaReply } from '@/lib/persona-replies'
 import type OpenAI from 'openai'
 
 export async function POST(req: NextRequest) {
@@ -21,6 +22,12 @@ export async function POST(req: NextRequest) {
     const { character } = session
 
     await addChatMessage(memeId, { role: 'user', content: message })
+
+    const quickReply = quickPersonaReply(character, message)
+    if (quickReply) {
+      await addChatMessage(memeId, { role: 'assistant', content: quickReply })
+      return NextResponse.json({ reply: quickReply })
+    }
 
     const messages: OpenAI.ChatCompletionMessageParam[] = [
       { role: 'system', content: SYSTEM_CHAT(character) },

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ai, TEXT_MODEL } from '@/lib/ai'
 import { CHAT_INTENT_DIRECTIVE, SYSTEM_CHAT } from '@/lib/prompts'
 import { isWeakChatReply } from '@/lib/quality'
+import { quickPersonaReply } from '@/lib/persona-replies'
 import {
   addChatMessage,
   bindTelegramChat,
@@ -80,6 +81,13 @@ export async function POST(req: NextRequest) {
   }
 
   await addChatMessage(memeId, { role: 'user', content: text })
+
+  const quickReply = quickPersonaReply(session.character, text)
+  if (quickReply) {
+    await addChatMessage(memeId, { role: 'assistant', content: quickReply })
+    await sendTelegramMessage(chatId, quickReply)
+    return NextResponse.json({ ok: true })
+  }
 
   let response = await ai.chat.completions.create({
     model: TEXT_MODEL,
