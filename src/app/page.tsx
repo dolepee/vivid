@@ -169,7 +169,7 @@ function Icon({ name }: { name: string }) {
 
 function SignalIcon() {
   return (
-    <svg viewBox="0 0 48 48" aria-hidden="true" className="h-10 w-10 text-amber-500/70">
+    <svg viewBox="0 0 48 48" aria-hidden="true" className="pipeline-icon">
       <path
         d="M4 25h7l3-9 5 18 5-26 5 26 5-14 3 5h7"
         fill="none"
@@ -185,7 +185,7 @@ function SignalIcon() {
 
 function BustIcon() {
   return (
-    <svg viewBox="0 0 48 48" aria-hidden="true" className="h-10 w-10 text-amber-500/70">
+    <svg viewBox="0 0 48 48" aria-hidden="true" className="pipeline-icon">
       <path
         d="M29.5 10.5c4.1 1.8 6.8 5.6 6.8 10 0 5.8-4.8 10.7-11 10.7-1.7 0-3.3-.4-4.7-1"
         fill="none"
@@ -208,7 +208,7 @@ function BustIcon() {
 
 function DnaIcon() {
   return (
-    <svg viewBox="0 0 48 48" aria-hidden="true" className="h-10 w-10 text-amber-500/70">
+    <svg viewBox="0 0 48 48" aria-hidden="true" className="pipeline-icon">
       <path
         d="M15 7c14 8 14 26 0 34M33 7c-14 8-14 26 0 34"
         fill="none"
@@ -223,7 +223,7 @@ function DnaIcon() {
 
 function LockIcon() {
   return (
-    <svg viewBox="0 0 48 48" aria-hidden="true" className="h-10 w-10 text-amber-500/70">
+    <svg viewBox="0 0 48 48" aria-hidden="true" className="pipeline-icon">
       <rect
         x="12"
         y="21"
@@ -408,8 +408,8 @@ export default function Home() {
         <section className="hero-terminal relative overflow-hidden border border-white/10 px-5 py-10 sm:px-8 lg:px-10">
           <HeroVisualization />
 
-          <div className="relative z-10 mx-auto max-w-5xl text-center">
-            <div className="mx-auto mb-5 w-fit rounded-sm border border-white/10 bg-white/[0.03] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-zinc-400">
+          <div className="relative z-10 mx-auto max-w-5xl pt-8 text-center">
+            <div className="engine-status-line">
               &gt; VIVID_ENGINE: <span className="text-emerald-400">ACTIVE</span> {'//'} HASH_SEED: 0xFFE8...e06c
             </div>
 
