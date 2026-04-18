@@ -1,63 +1,59 @@
 # VIVID
 
-**Living Meme AI for Four.Meme.** Type a concept, get a meme character with identity, lore, visuals, voice, Telegram presence, Four.Meme launch copy, and optional BNB-chain soul proof.
+Living Meme AI for Four.Meme.
 
-**Live:** https://vividmeme.vercel.app
-**Judge demo:** https://vividmeme.vercel.app/demo
+VIVID turns one prompt into a persistent meme character with a name, ticker, lore, voice, visuals, social copy, Telegram presence, Four.Meme launch export, and optional BNB-chain soul proof.
 
-## Winner Loop
+Live app: https://vividmeme.vercel.app
 
-VIVID is designed around one clear hackathon loop:
+## What VIVID Does
 
-1. **Trigger:** a user enters one meme concept.
-2. **Reasoning:** VIVID creates a canonical character genome: name, ticker, lore, worldview, speech pattern, motifs, visual style, and launch copy.
-3. **Action:** the same genome drives chat, social posts, images, Telegram activation, and Four.Meme export.
-4. **Proof:** the character payload can be hashed and anchored through `VividSoulRegistry` on BNB testnet.
-5. **Result:** the meme is no longer a random asset bundle; it behaves like a persistent character that can live with a community after launch.
+- Creates a coherent meme identity from a single concept.
+- Generates lore, origin story, personality, tone, motifs, and launch copy.
+- Produces AI-generated meme visuals tied to the same character spec.
+- Lets users chat with the meme in character.
+- Generates social posts, replies, captions, raid lines, and Telegram-style messages.
+- Exports a Four.Meme-ready launch kit.
+- Computes a deterministic soul hash for the full character package.
+- Supports optional BNB Testnet anchoring through `VividSoulRegistry`.
+- Supports optional Telegram bot activation for live community interaction.
 
-## What It Does
-
-- **Identity:** coherent name, ticker, origin story, worldview, tone, motifs, and taboo topics.
-- **Voice:** live chat where the meme stays in character and references its own lore.
-- **Visuals:** three AI-generated meme images derived from the same visual style anchor.
-- **Content:** launch-day social posts in the meme's voice.
-- **Telegram:** webhook-ready bot activation so the meme can talk outside the app.
-- **Four.Meme Export:** launch kit with copy, lore, ticker, image, and final deployment CTA.
-- **BNB Proof:** deterministic soul hash plus optional BNB testnet transaction through `VividSoulRegistry`.
-
-The core moat is consistency: every output is derived from one canonical character spec, not generated independently.
+The main design principle is consistency: identity, chat, visuals, posts, Telegram behavior, and launch copy all derive from one canonical character spec.
 
 ## Architecture
 
 ```text
-Next.js 16 App Router
+Next.js App Router
   |
-  +-- /api/generate            CharacterSpec + first content batch via DGrid / GPT-4o
-  +-- /api/chat                In-character conversation
-  +-- /api/content             More social posts
-  +-- /api/images              Pollinations image URLs
-  +-- /api/session             Session retrieval
-  +-- /api/session/all         Recent living memes
-  +-- /api/soul/metadata       Canonical soul metadata + hash
-  +-- /api/telegram/webhook    Telegram persona webhook
-  +-- /api/demo/seed           Judge-safe demo seed
+  +-- /api/generate          character + initial content generation
+  +-- /api/chat              in-character chat
+  +-- /api/content           additional meme content
+  +-- /api/images            meme image generation
+  +-- /api/session           session retrieval
+  +-- /api/session/all       recent meme sessions
+  +-- /api/soul/metadata     canonical metadata + soul hash
+  +-- /api/telegram/webhook  Telegram persona webhook
   |
-  +-- Upstash Redis            Durable session + Telegram chat binding
-  +-- Zod                      Runtime schema validation
-  +-- VividSoulRegistry.sol    BNB testnet soul proof contract
+  +-- Redis                  durable meme/session storage
+  +-- Zod                    runtime schema validation
+  +-- viem                   BNB transaction encoding
+  +-- VividSoulRegistry      optional BNB soul proof contract
 ```
 
-## Stack
+## Tech Stack
 
-- Next.js 16, React 19, Tailwind CSS 4
-- DGrid AI Gateway with GPT-4o
-- Pollinations.ai for image generation
-- Upstash Redis / Vercel KV for persistence
-- viem for BNB transaction encoding
-- Solidity `VividSoulRegistry` for soul anchoring
-- Vercel for deployment
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- DGrid AI Gateway
+- Pollinations image generation
+- Upstash Redis / Vercel KV
+- viem
+- Solidity
+- Vercel
 
-## Local Setup
+## Local Development
 
 ```bash
 git clone https://github.com/dolepee/vivid.git
@@ -67,7 +63,7 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
-Required:
+Set the required values in `.env.local` before running the full app.
 
 ```bash
 DGRID_API_KEY=...
@@ -75,76 +71,44 @@ KV_REST_API_URL=...
 KV_REST_API_TOKEN=...
 ```
 
-Optional for BNB proof:
+Optional integrations are documented in `.env.local.example`.
+
+## Scripts
 
 ```bash
-NEXT_PUBLIC_VIVID_SOUL_REGISTRY_ADDRESS=0x...
-NEXT_PUBLIC_VIVID_DEMO_SOUL_TX_HASH=0x...
-BNB_TESTNET_RPC_URL=https://data-seed-prebsc-1-s1.binance.org:8545
-DEPLOYER_PRIVATE_KEY=...
+npm run dev          # local development
+npm run build        # production build
+npm run lint         # lint checks
+npm run deploy:soul  # deploy VividSoulRegistry to BNB Testnet
 ```
 
-Optional for Telegram:
+## BNB Soul Proof
 
-```bash
-NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=...
-TELEGRAM_BOT_TOKEN=...
-```
+VIVID can hash a meme's canonical package and anchor that hash on BNB Testnet.
 
-## Deploy BNB Soul Registry
+The anchored payload includes:
 
-Fund the deployer with BNB testnet gas, then run:
-
-```bash
-DEPLOYER_PRIVATE_KEY=0x... npm run deploy:soul
-```
-
-The script prints:
-
-- deployment transaction
-- contract address
-- the exact `NEXT_PUBLIC_VIVID_SOUL_REGISTRY_ADDRESS` value to set in Vercel
+- character identity
+- lore and personality fields
+- image URLs
+- generated content feed
+- metadata URL
+- deterministic soul hash
 
 Contract source: `contracts/VividSoulRegistry.sol`
 
-## Telegram Webhook
+This proof is not a token launch, liquidity action, or treasury system. It is a verifiable record that a specific meme identity existed with a specific canonical character package.
 
-After setting `TELEGRAM_BOT_TOKEN`, point the bot webhook at:
+## Telegram
 
-```text
-https://vividmeme.vercel.app/api/telegram/webhook
-```
-
-Example setup:
-
-```bash
-curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook?url=https://vividmeme.vercel.app/api/telegram/webhook"
-```
-
-Each meme page creates a Telegram deep link with:
+VIVID can bind a Telegram chat to a meme session through the Telegram webhook route:
 
 ```text
-https://t.me/<bot>?start=vivid_<memeId>
+/api/telegram/webhook
 ```
 
-That binds the chat to the meme session and routes future messages through the same character prompt.
+When enabled, each meme can expose a Telegram deep link that routes future messages through the same character spec used by the app.
 
-## Demo Flow
+## Project Positioning
 
-1. Open `/demo`.
-2. Run the Pandaudit demo.
-3. Show the canonical genome and consistency proof.
-4. Ask the meme for its origin story in chat.
-5. Generate or show visuals.
-6. Open the Proof section and show the deterministic soul hash.
-7. Anchor on BNB testnet if the registry address is configured.
-8. Open the Telegram activation link if bot env is configured.
-9. Export the launch kit for Four.Meme.
-
-## Hackathon Positioning
-
-VIVID is not just another launch-kit generator.
-
-**Pitch:** Four.Meme lets anyone launch a token. VIVID gives that token a persistent AI soul: identity, lore, voice, visuals, memory, Telegram presence, and BNB-chain proof.
-
-Built for the Four.Meme AI Sprint on DoraHacks.
+Four.Meme makes token launch easy. VIVID gives a meme token a persistent AI identity before launch: a character that can speak, post, export, and prove its canonical soul on-chain.
