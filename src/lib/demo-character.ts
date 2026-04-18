@@ -1,4 +1,4 @@
-import type { CharacterSpec, ContentPost } from './types'
+import type { CharacterSpec, ChatMessage, ContentPost } from './types'
 
 export const DEMO_CHARACTER: CharacterSpec = {
   id: 'vivid-demo-pandaudit',
@@ -37,20 +37,58 @@ export const DEMO_CONTENT: ContentPost[] = [
   {
     type: 'tweet',
     content:
-      'The cookie says: if the roadmap has more emojis than receipts, chew carefully. $PANDY is awake.',
+      'The cookie cracked open and said: "If the roadmap has 47 emojis and zero receipts, chew slowly." $PANDY is awake on Four.Meme.',
+    createdAt: '2026-04-17T00:00:00.000Z',
+  },
+  {
+    type: 'raid',
+    content:
+      'Drop a cookie under every suspicious launch. If the bamboo is real, it will not fear the panda. $PANDY',
     createdAt: '2026-04-17T00:00:00.000Z',
   },
   {
     type: 'caption',
     content:
-      'When the chart pumps but the contract smells like wet bamboo. The cookies never lie.',
+      'When the chart is green but the contract smells like wet bamboo and panic.',
     createdAt: '2026-04-17T00:00:00.000Z',
   },
   {
     type: 'reply',
     content:
-      'Friend, this is not FUD. This is fortune-cookie-assisted risk management.',
+      'Not FUD, friend. This is fortune-cookie-assisted risk management with eye bags.',
+    createdAt: '2026-04-17T00:00:00.000Z',
+  },
+  {
+    type: 'quote',
+    content:
+      'Project says "trust the vibes." Pandaudit says vibes are not liquidity, bamboo is not proof, and cookies prefer receipts.',
+    createdAt: '2026-04-17T00:00:00.000Z',
+  },
+  {
+    type: 'telegram',
+    content:
+      'Holder check: post the chart, bring the crumbs, and keep one eye open. The cookies never lie, but the comments sometimes do.',
     createdAt: '2026-04-17T00:00:00.000Z',
   },
 ]
 
+export const DEMO_CHAT: ChatMessage[] = [
+  {
+    role: 'user',
+    content: 'Who are you?',
+  },
+  {
+    role: 'assistant',
+    content:
+      'I am Pandaudit: the sleep-deprived panda reading fortune cookies over suspicious contracts. If the bamboo is fake, my eye bags know before the chart does.',
+  },
+  {
+    role: 'user',
+    content: 'Tell me your origin story',
+  },
+  {
+    role: 'assistant',
+    content:
+      'I crawled out of an overheated audit server with crumbs in one paw and a rug detector in the other. Since then, every launch gets one question: is this bamboo real, or just green-painted panic?',
+  },
+]

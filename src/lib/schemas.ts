@@ -17,7 +17,7 @@ export const CharacterSpecSchema = z.object({
 })
 
 export const ContentPostSchema = z.object({
-  type: z.enum(['tweet', 'caption', 'reply']),
+  type: z.enum(['tweet', 'caption', 'reply', 'quote', 'raid', 'telegram']),
   content: z.string().min(1),
 })
 

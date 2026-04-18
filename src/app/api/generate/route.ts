@@ -4,6 +4,7 @@ import { ai, TEXT_MODEL } from '@/lib/ai'
 import { SYSTEM_GENERATE, SYSTEM_CONTENT } from '@/lib/prompts'
 import { createSession } from '@/lib/store'
 import { parseCharacter, parseContentPosts } from '@/lib/schemas'
+import { isWeakContentBatch } from '@/lib/quality'
 import type { CharacterSpec } from '@/lib/types'
 
 async function generateCharacterRaw(concept: string): Promise<string> {
@@ -52,10 +53,14 @@ export async function POST(req: NextRequest) {
       model: TEXT_MODEL,
       messages: [
         { role: 'system', content: SYSTEM_CONTENT(character) },
-        { role: 'user', content: 'Generate your first batch of posts for launch day.' },
+        {
+          role: 'user',
+          content:
+            'Generate your first launch-day batch. Make it relatable, funny, viral, and unmistakably in character.',
+        },
       ],
       temperature: 0.9,
-      max_tokens: 800,
+      max_tokens: 1000,
     })
 
     const session = await createSession(character)
@@ -64,7 +69,35 @@ export async function POST(req: NextRequest) {
       const contentResponse = await contentPromise
       const contentRaw = contentResponse.choices[0]?.message?.content?.trim()
       if (contentRaw) {
-        const posts = parseContentPosts(contentRaw)
+        let posts = parseContentPosts(contentRaw)
+
+        if (isWeakContentBatch(posts, character)) {
+          const retryResponse = await ai.chat.completions.create({
+            model: TEXT_MODEL,
+            messages: [
+              { role: 'system', content: SYSTEM_CONTENT(character) },
+              {
+                role: 'user',
+                content:
+                  'Regenerate the full JSON array. The previous launch batch was too generic. Make every post sharper, funnier, more memetic, more crypto-native, and more specific to the character lore.',
+              },
+            ],
+            temperature: 1,
+            max_tokens: 1000,
+          })
+          const retryRaw = retryResponse.choices[0]?.message?.content?.trim()
+          if (retryRaw) {
+            try {
+              const retryPosts = parseContentPosts(retryRaw)
+              if (!isWeakContentBatch(retryPosts, character)) {
+                posts = retryPosts
+              }
+            } catch {
+              // Keep the valid first batch if the stricter retry breaks JSON.
+            }
+          }
+        }
+
         session.contentFeed = posts.map(p => ({
           ...p,
           createdAt: new Date().toISOString(),

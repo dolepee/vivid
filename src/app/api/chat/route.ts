@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ai, TEXT_MODEL } from '@/lib/ai'
 import { SYSTEM_CHAT } from '@/lib/prompts'
 import { getSession, addChatMessage } from '@/lib/store'
+import { isWeakChatReply } from '@/lib/quality'
 import type OpenAI from 'openai'
 
 export async function POST(req: NextRequest) {
@@ -30,14 +31,32 @@ export async function POST(req: NextRequest) {
       { role: 'user' as const, content: message },
     ]
 
-    const response = await ai.chat.completions.create({
+    let response = await ai.chat.completions.create({
       model: TEXT_MODEL,
       messages,
       temperature: 0.9,
       max_tokens: 300,
     })
 
-    const reply = response.choices[0]?.message?.content?.trim() || '...'
+    let reply = response.choices[0]?.message?.content?.trim() || '...'
+
+    if (isWeakChatReply(reply)) {
+      response = await ai.chat.completions.create({
+        model: TEXT_MODEL,
+        messages: [
+          ...messages,
+          {
+            role: 'system',
+            content:
+              'Your previous draft was too generic. Rewrite it in the same character voice with a sharper joke, opinion, lore hook, or question. Keep it under 2 sentences. No generic assistant language.',
+          },
+        ],
+        temperature: 1,
+        max_tokens: 220,
+      })
+      reply = response.choices[0]?.message?.content?.trim() || reply
+    }
+
     await addChatMessage(memeId, { role: 'assistant', content: reply })
 
     return NextResponse.json({ reply })

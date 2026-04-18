@@ -3,6 +3,7 @@ import { ai, TEXT_MODEL } from '@/lib/ai'
 import { SYSTEM_CONTENT } from '@/lib/prompts'
 import { getSession, addContentPosts } from '@/lib/store'
 import { parseContentPosts } from '@/lib/schemas'
+import { isWeakContentBatch } from '@/lib/quality'
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,17 +20,22 @@ export async function POST(req: NextRequest) {
 
     const { character } = session
 
-    const response = await ai.chat.completions.create({
-      model: TEXT_MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM_CONTENT(character) },
-        { role: 'user', content: 'Generate a fresh batch of posts. Be creative and vary the types.' },
-      ],
-      temperature: 0.95,
-      max_tokens: 800,
-    })
+    const generate = (instruction: string, temperature = 0.95) =>
+      ai.chat.completions.create({
+        model: TEXT_MODEL,
+        messages: [
+          { role: 'system', content: SYSTEM_CONTENT(character) },
+          { role: 'user', content: instruction },
+        ],
+        temperature,
+        max_tokens: 1000,
+      })
 
-    const raw = response.choices[0]?.message?.content?.trim()
+    let response = await generate(
+      'Generate a fresh batch of posts. Make them relatable, funny, viral, and unmistakably in character.'
+    )
+
+    let raw = response.choices[0]?.message?.content?.trim()
     if (!raw) {
       return NextResponse.json({ error: 'Empty response from AI' }, { status: 502 })
     }
@@ -39,6 +45,24 @@ export async function POST(req: NextRequest) {
       posts = parseContentPosts(raw)
     } catch {
       return NextResponse.json({ error: 'AI returned invalid content. Try again.' }, { status: 502 })
+    }
+
+    if (isWeakContentBatch(posts, character)) {
+      response = await generate(
+        'Regenerate the full JSON array. The previous batch was too generic. Make every post feel native to meme Twitter/Telegram: sharper hooks, better punchlines, stronger lore references, less brand copy, more holder energy.',
+        1
+      )
+      raw = response.choices[0]?.message?.content?.trim()
+      if (raw) {
+        try {
+          const retryPosts = parseContentPosts(raw)
+          if (!isWeakContentBatch(retryPosts, character)) {
+            posts = retryPosts
+          }
+        } catch {
+          // Keep the valid first batch if the stricter retry breaks JSON.
+        }
+      }
     }
 
     const timestamped = posts.map(p => ({

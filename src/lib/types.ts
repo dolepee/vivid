@@ -31,7 +31,7 @@ export interface ChatMessage {
 }
 
 export interface ContentPost {
-  type: 'tweet' | 'caption' | 'reply'
+  type: 'tweet' | 'caption' | 'reply' | 'quote' | 'raid' | 'telegram'
   content: string
   createdAt: string
 }

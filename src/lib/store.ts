@@ -51,6 +51,10 @@ export async function addChatMessage(id: string, message: ChatMessage): Promise<
   })
 }
 
+export async function setChatHistory(id: string, chatHistory: ChatMessage[]): Promise<void> {
+  await updateSession(id, s => ({ ...s, chatHistory }))
+}
+
 export async function setImages(id: string, images: string[]): Promise<void> {
   await updateSession(id, s => ({ ...s, images }))
 }
@@ -60,6 +64,10 @@ export async function addContentPosts(id: string, posts: ContentPost[]): Promise
     ...s,
     contentFeed: [...s.contentFeed, ...posts],
   }))
+}
+
+export async function setContentPosts(id: string, posts: ContentPost[]): Promise<void> {
+  await updateSession(id, s => ({ ...s, contentFeed: posts }))
 }
 
 export async function bindTelegramChat(chatId: string, memeId: string): Promise<void> {
