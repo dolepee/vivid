@@ -15,6 +15,20 @@ interface MemeSummary {
   chatCount: number
 }
 
+function dedupeMemes(memes: MemeSummary[]) {
+  const seen = new Set<string>()
+  const unique: MemeSummary[] = []
+
+  for (const meme of memes) {
+    const key = `${meme.name.toLowerCase()}-${meme.ticker.toLowerCase()}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    unique.push(meme)
+  }
+
+  return unique
+}
+
 export default function GalleryPage() {
   const [memes, setMemes] = useState<MemeSummary[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,7 +36,7 @@ export default function GalleryPage() {
   useEffect(() => {
     fetch('/api/session/all')
       .then(r => r.json())
-      .then(d => { setMemes(d.memes || []); setLoading(false) })
+      .then(d => { setMemes(dedupeMemes(d.memes || [])); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
 

@@ -712,7 +712,7 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <>
-      <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+      <div className="meme-detail-shell grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="life-core-panel space-y-4">
           <div className="card hero-surface p-5 sm:p-6">
             <div className="space-y-5">

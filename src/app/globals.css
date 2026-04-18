@@ -58,8 +58,8 @@ button {
 
 .card {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.01)),
-    var(--card);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.018)),
+    rgba(12, 15, 23, 0.94);
   border: 1px solid var(--border);
   border-radius: 18px;
   box-shadow:
@@ -395,7 +395,7 @@ button {
   background:
     radial-gradient(circle at 18% 18%, rgba(243, 186, 47, 0.19), transparent 20%),
     radial-gradient(circle at 82% 14%, rgba(255, 138, 31, 0.11), transparent 16%),
-    linear-gradient(135deg, rgba(23, 15, 10, 0.96), rgba(10, 7, 5, 0.98));
+    linear-gradient(135deg, rgba(18, 15, 10, 0.98), rgba(9, 11, 16, 0.995));
 }
 
 .hero-surface::after {
@@ -680,6 +680,7 @@ button {
 .life-core-panel {
   position: sticky;
   top: 6rem;
+  z-index: 1;
 }
 
 .life-meter {
@@ -720,6 +721,37 @@ button {
   scroll-margin-top: 6rem;
   content-visibility: auto;
   contain-intrinsic-size: 720px;
+  position: relative;
+  z-index: 2;
+}
+
+.meme-detail-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+.meme-detail-shell .card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02)),
+    rgba(13, 16, 24, 0.97);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.meme-detail-shell .hero-surface {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(217, 119, 6, 0.16), transparent 22%),
+    radial-gradient(circle at 82% 14%, rgba(217, 119, 6, 0.08), transparent 18%),
+    linear-gradient(135deg, rgba(18, 14, 9, 0.995), rgba(8, 10, 15, 1));
+}
+
+.meme-detail-shell .hero-surface::after {
+  opacity: 0.28;
+}
+
+.meme-detail-shell .section-shell > .card {
+  box-shadow:
+    0 16px 46px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .section-heading {
