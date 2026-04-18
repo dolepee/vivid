@@ -394,7 +394,7 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
 
   const streamAssistantReply = async (reply: string) => {
     const parts = reply.split(/(\s+)/).filter(part => part.length > 0)
-    const delay = Math.max(18, Math.min(60, Math.floor(1100 / Math.max(parts.length, 1))))
+    const delay = Math.max(8, Math.min(24, Math.floor(420 / Math.max(parts.length, 1))))
     let built = ''
 
     setStreamingReply('')
@@ -449,8 +449,8 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
       const body = await res.json()
 
       const elapsed = Date.now() - typingStartedAt
-      if (elapsed < 1400) {
-        await sleep(1400 - elapsed)
+      if (elapsed < 650) {
+        await sleep(650 - elapsed)
       }
 
       if (!res.ok) {
@@ -462,8 +462,8 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
       await streamAssistantReply(body.reply)
     } catch {
       const elapsed = Date.now() - typingStartedAt
-      if (elapsed < 1400) {
-        await sleep(1400 - elapsed)
+      if (elapsed < 650) {
+        await sleep(650 - elapsed)
       }
       setChatError('Network error. Check your connection.')
       setStreamingReply(null)

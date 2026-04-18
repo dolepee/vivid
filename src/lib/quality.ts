@@ -13,6 +13,16 @@ const STALE_PHRASES = [
   'as an ai',
   'that sounds great',
   'that is great',
+  'seeker',
+  'shall',
+  'what tale',
+  'moonlit',
+  'under a thousand suns',
+  'dear friend',
+  'behold',
+  'fortunes await',
+  'ready your crumbs',
+  'each trade is a cookie',
 ]
 
 const CRYPTO_CONTEXT = [
@@ -41,6 +51,7 @@ export function isWeakChatReply(reply: string) {
   const lower = text.toLowerCase()
 
   if (text.length < 36) return true
+  if (text.length > 520) return true
   if (STALE_PHRASES.some(phrase => lower.includes(phrase))) return true
   if (!/[.!?]$/.test(text)) return true
 

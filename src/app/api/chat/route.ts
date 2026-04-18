@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ai, TEXT_MODEL } from '@/lib/ai'
-import { SYSTEM_CHAT } from '@/lib/prompts'
+import { CHAT_INTENT_DIRECTIVE, SYSTEM_CHAT } from '@/lib/prompts'
 import { getSession, addChatMessage } from '@/lib/store'
 import { isWeakChatReply } from '@/lib/quality'
 import type OpenAI from 'openai'
@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
 
     const messages: OpenAI.ChatCompletionMessageParam[] = [
       { role: 'system', content: SYSTEM_CHAT(character) },
+      { role: 'system', content: CHAT_INTENT_DIRECTIVE(message) },
       ...session.chatHistory.map(m => ({
         role: m.role as 'user' | 'assistant',
         content: m.content,
@@ -34,8 +35,8 @@ export async function POST(req: NextRequest) {
     let response = await ai.chat.completions.create({
       model: TEXT_MODEL,
       messages,
-      temperature: 0.9,
-      max_tokens: 300,
+      temperature: 0.82,
+      max_tokens: 220,
     })
 
     let reply = response.choices[0]?.message?.content?.trim() || '...'
@@ -48,11 +49,11 @@ export async function POST(req: NextRequest) {
           {
             role: 'system',
             content:
-              'Your previous draft was too generic. Rewrite it in the same character voice with a sharper joke, opinion, lore hook, or question. Keep it under 2 sentences. No generic assistant language.',
+              'Your previous draft was too generic or too formal. Rewrite it like a meme-native Telegram/X character: sharper, shorter, copy-pasteable, no fantasy filler. Follow the user intent exactly.',
           },
         ],
-        temperature: 1,
-        max_tokens: 220,
+        temperature: 0.9,
+        max_tokens: 180,
       })
       reply = response.choices[0]?.message?.content?.trim() || reply
     }

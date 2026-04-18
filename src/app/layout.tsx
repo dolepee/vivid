@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen antialiased">
-        <header className="sticky top-0 z-40 border-b border-white/5 bg-black/30 px-6 py-4 backdrop-blur-xl">
+        <header className="sticky top-0 z-40 border-b border-white/5 bg-[#0d0906]/95 px-6 py-4">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
               <div className="avatar-orb w-9 h-9 rounded-xl bg-[radial-gradient(circle_at_30%_30%,#fff1c7,#ffd76a_52%,#2b1806)] flex items-center justify-center text-[#241703] font-bold text-sm">

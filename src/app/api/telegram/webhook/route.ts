@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ai, TEXT_MODEL } from '@/lib/ai'
-import { SYSTEM_CHAT } from '@/lib/prompts'
+import { CHAT_INTENT_DIRECTIVE, SYSTEM_CHAT } from '@/lib/prompts'
+import { isWeakChatReply } from '@/lib/quality'
 import {
   addChatMessage,
   bindTelegramChat,
@@ -80,21 +81,42 @@ export async function POST(req: NextRequest) {
 
   await addChatMessage(memeId, { role: 'user', content: text })
 
-  const response = await ai.chat.completions.create({
+  let response = await ai.chat.completions.create({
     model: TEXT_MODEL,
     messages: [
       { role: 'system', content: SYSTEM_CHAT(session.character) },
+      { role: 'system', content: CHAT_INTENT_DIRECTIVE(text) },
       ...session.chatHistory.slice(-12).map(m => ({
         role: m.role as 'user' | 'assistant',
         content: m.content,
       })),
       { role: 'user', content: text },
     ],
-    temperature: 0.9,
-    max_tokens: 260,
+    temperature: 0.82,
+    max_tokens: 220,
   })
 
-  const reply = response.choices[0]?.message?.content?.trim() || session.character.signatureLines[0]
+  let reply = response.choices[0]?.message?.content?.trim() || session.character.signatureLines[0]
+
+  if (isWeakChatReply(reply)) {
+    response = await ai.chat.completions.create({
+      model: TEXT_MODEL,
+      messages: [
+        { role: 'system', content: SYSTEM_CHAT(session.character) },
+        { role: 'system', content: CHAT_INTENT_DIRECTIVE(text) },
+        {
+          role: 'system',
+          content:
+            'Rewrite the reply. The previous version was too generic or formal. Make it short, meme-native, and useful in Telegram.',
+        },
+        { role: 'user', content: text },
+      ],
+      temperature: 0.9,
+      max_tokens: 180,
+    })
+    reply = response.choices[0]?.message?.content?.trim() || reply
+  }
+
   await addChatMessage(memeId, { role: 'assistant', content: reply })
   await sendTelegramMessage(chatId, reply)
 
