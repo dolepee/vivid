@@ -29,7 +29,7 @@ export default function RootLayout({
                 Demo
               </Link>
               <Link href="/" className="nav-bracket hidden sm:inline-flex">
-                Incubator
+                Create
               </Link>
               <Link href="/gallery" className="nav-bracket">
                 Gallery
@@ -38,7 +38,7 @@ export default function RootLayout({
             <div aria-hidden="true" />
           </div>
         </header>
-        <main className="mx-auto max-w-7xl px-5 py-8">
+        <main className="mx-auto max-w-7xl px-5 py-5">
           {children}
         </main>
       </body>

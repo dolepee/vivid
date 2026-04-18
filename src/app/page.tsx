@@ -160,6 +160,20 @@ function formatTimestamp(value?: string) {
   }).format(date)
 }
 
+function dedupeMemes(memes: MemeSummary[]) {
+  const seen = new Set<string>()
+  const unique: MemeSummary[] = []
+
+  for (const meme of memes) {
+    const key = `${meme.name.toLowerCase()}-${meme.ticker.toLowerCase()}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    unique.push(meme)
+  }
+
+  return unique
+}
+
 function Icon({ name }: { name: string }) {
   if (name === 'signal') return <SignalIcon />
   if (name === 'bust') return <BustIcon />
@@ -375,7 +389,7 @@ export default function Home() {
     }
   }
 
-  const displayedMemes = featured.length > 0 ? featured : FALLBACK_MEMES
+  const displayedMemes = dedupeMemes(featured.length > 0 ? featured : FALLBACK_MEMES)
 
   return (
     <>
@@ -405,28 +419,28 @@ export default function Home() {
       )}
 
       <div className="terminal-home space-y-8 pb-12">
-        <section className="hero-terminal relative overflow-hidden border border-white/10 px-5 py-10 sm:px-8 lg:px-10">
+        <section className="hero-terminal relative overflow-hidden border border-white/10 px-5 py-6 sm:px-8 sm:py-7 lg:px-10">
           <HeroVisualization />
 
-          <div className="relative z-10 mx-auto max-w-5xl pt-8 text-center">
+          <div className="relative z-10 mx-auto max-w-5xl pt-4 text-center">
             <div className="engine-status-line">
               &gt; VIVID_ENGINE: <span className="text-emerald-400">ACTIVE</span> {'//'} HASH_SEED: 0xFFE8...e06c
             </div>
 
-            <h1 className="mx-auto max-w-4xl text-4xl font-semibold tracking-[-0.055em] text-zinc-100 sm:text-6xl lg:text-7xl">
+            <h1 className="mx-auto max-w-4xl text-4xl font-semibold tracking-[-0.055em] text-zinc-100 sm:text-5xl lg:text-6xl">
               Don&apos;t generate a meme.
               <span className="block text-amber-500 drop-shadow-[0_0_18px_rgba(217,119,6,0.28)]">
                 Incubate a lifeform.
               </span>
             </h1>
 
-            <p className="mx-auto mt-5 max-w-3xl text-sm leading-7 text-zinc-400 sm:text-base">
+            <p className="mx-auto mt-3 max-w-3xl text-sm leading-6 text-zinc-400 sm:text-base">
               VIVID turns one concept into a canonical meme organism: identity, lore, chat voice,
               visuals, Telegram behavior, Four.Meme launch copy, and BNB-chain soul proof.
             </p>
           </div>
 
-          <div className="relative z-10 mx-auto mt-9 max-w-5xl">
+          <div className="relative z-10 mx-auto mt-6 max-w-5xl">
             <div className="pipeline-grid">
               {PIPELINE_STEPS.map((step, index) => (
                 <div key={step.id} className="pipeline-wrap">
@@ -435,15 +449,15 @@ export default function Home() {
                       <span className="font-mono text-xs text-amber-500">[{step.id}]</span>
                       <Icon name={step.icon} />
                     </div>
-                    <h2 className="mt-4 font-mono text-sm font-medium text-zinc-100">{step.title}</h2>
-                    <p className="mt-2 text-xs leading-6 text-zinc-400">{step.body}</p>
+                    <h2 className="mt-3 font-mono text-sm font-medium leading-5 text-zinc-100">{step.title}</h2>
+                    <p className="mt-1.5 text-xs leading-5 text-zinc-400">{step.body}</p>
                   </div>
                   {index < PIPELINE_STEPS.length - 1 && <span className="pipeline-arrow">-&gt;</span>}
                 </div>
               ))}
             </div>
 
-            <div id="incubator" className="input-chamber mx-auto mt-7 max-w-4xl">
+            <div id="incubator" className="input-chamber mx-auto mt-5 max-w-4xl">
               <div className="mb-4 flex items-center justify-between gap-4 border-b border-white/10 pb-3">
                 <p className="font-mono text-xs uppercase tracking-[0.18em] text-amber-500">Input chamber</p>
                 <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-zinc-500">

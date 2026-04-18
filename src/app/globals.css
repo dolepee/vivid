@@ -762,7 +762,7 @@ button {
 }
 
 .hero-terminal {
-  min-height: 39rem;
+  min-height: auto;
   background:
     linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px),
@@ -811,7 +811,7 @@ button {
   left: -8%;
   right: -8%;
   width: 116%;
-  height: 26rem;
+  height: 22rem;
   fill: none;
   stroke: rgba(217, 119, 6, 0.64);
   stroke-width: 1.35;
@@ -820,11 +820,11 @@ button {
 }
 
 .hero-wave-a {
-  top: 1.2rem;
+  top: -0.4rem;
 }
 
 .hero-wave-b {
-  top: 5.4rem;
+  top: 3.9rem;
   stroke: rgba(251, 191, 36, 0.58);
   opacity: 0.58;
 }
@@ -832,18 +832,18 @@ button {
 .engine-status-line {
   position: absolute;
   left: 50%;
-  top: -0.2rem;
+  top: -0.35rem;
   width: max-content;
   max-width: calc(100vw - 3rem);
   transform: translateX(-50%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.035);
-  padding: 0.34rem 0.7rem;
+  padding: 0.28rem 0.64rem;
   color: #a1a1aa;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.13em;
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -902,7 +902,7 @@ button {
 .pipeline-grid {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 0.9rem;
 }
 
 .pipeline-wrap {
@@ -919,7 +919,7 @@ button {
   background:
     linear-gradient(180deg, rgba(217, 119, 6, 0.055), transparent 42%),
     rgba(255, 255, 255, 0.028);
-  padding: 1rem;
+  padding: 0.9rem;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
     0 0 0 1px rgba(217, 119, 6, 0.035),
@@ -951,8 +951,8 @@ button {
 }
 
 .pipeline-icon {
-  width: 3.05rem;
-  height: 3.05rem;
+  width: 2.55rem;
+  height: 2.55rem;
   color: rgba(217, 119, 6, 0.76);
   opacity: 0.92;
   text-shadow: 0 0 18px rgba(217, 119, 6, 0.32);
@@ -968,7 +968,7 @@ button {
   background:
     linear-gradient(180deg, rgba(217, 119, 6, 0.065), rgba(255, 255, 255, 0.018) 26%),
     rgba(7, 10, 16, 0.82);
-  padding: 1.25rem;
+  padding: 1rem;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.03),
     0 0 22px rgba(217, 119, 6, 0.16),
@@ -991,8 +991,8 @@ button {
   color: #f4f4f5;
   outline: none;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  font-size: 0.95rem;
-  line-height: 1.8;
+  font-size: 0.9rem;
+  line-height: 1.62;
 }
 
 .terminal-textarea::placeholder {
@@ -1007,7 +1007,7 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.02);
-  padding: 0.45rem 0.65rem;
+  padding: 0.38rem 0.58rem;
   color: #a1a1aa;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   font-size: 0.72rem;
@@ -1028,7 +1028,7 @@ button {
   border: 1px solid rgba(251, 191, 36, 0.58);
   border-radius: 4px;
   background: rgba(217, 119, 6, 0.92);
-  padding: 0.78rem 1rem;
+  padding: 0.68rem 0.95rem;
   color: #0A0D14;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   font-size: 0.78rem;
