@@ -762,13 +762,16 @@ button {
 }
 
 .hero-terminal {
-  min-height: 30rem;
+  min-height: 39rem;
   background:
-    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px),
     #0A0D14;
   background-size: 76px 76px;
   border-radius: 2px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 24px 90px rgba(0, 0, 0, 0.28);
 }
 
 .hero-terminal::before {
@@ -777,10 +780,10 @@ button {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(30deg, transparent 0 48%, rgba(217, 119, 6, 0.08) 48.2% 48.6%, transparent 48.8% 100%),
-    linear-gradient(150deg, transparent 0 52%, rgba(255, 255, 255, 0.045) 52.2% 52.5%, transparent 52.7% 100%);
+    linear-gradient(30deg, transparent 0 48%, rgba(217, 119, 6, 0.13) 48.2% 48.6%, transparent 48.8% 100%),
+    linear-gradient(150deg, transparent 0 52%, rgba(255, 255, 255, 0.055) 52.2% 52.5%, transparent 52.7% 100%);
   background-size: 310px 310px, 440px 440px;
-  opacity: 0.36;
+  opacity: 0.52;
 }
 
 .hero-terminal::after {
@@ -793,7 +796,7 @@ button {
     radial-gradient(circle at 78% 24%, rgba(217, 119, 6, 0.13) 0 1px, transparent 1.5px),
     radial-gradient(circle at 90% 74%, rgba(255, 255, 255, 0.08) 0 1px, transparent 1.5px);
   background-size: 140px 140px, 210px 210px, 190px 190px;
-  opacity: 0.45;
+  opacity: 0.58;
 }
 
 .hero-data-viz {
@@ -811,27 +814,27 @@ button {
   height: 26rem;
   fill: none;
   stroke: rgba(217, 119, 6, 0.64);
-  stroke-width: 1.1;
+  stroke-width: 1.35;
   stroke-linecap: round;
-  opacity: 0.72;
-  filter: drop-shadow(0 0 18px rgba(217, 119, 6, 0.18));
+  opacity: 0.86;
+  filter: drop-shadow(0 0 22px rgba(217, 119, 6, 0.24));
 }
 
 .hero-wave-a {
-  top: 4.25rem;
+  top: 1.2rem;
 }
 
 .hero-wave-b {
-  top: -1rem;
-  stroke: rgba(251, 191, 36, 0.5);
-  opacity: 0.56;
+  top: 5.4rem;
+  stroke: rgba(251, 191, 36, 0.58);
+  opacity: 0.68;
 }
 
 .orbital-ring {
   position: absolute;
-  border: 1px solid rgba(217, 119, 6, 0.14);
+  border: 1px solid rgba(217, 119, 6, 0.2);
   border-radius: 999px;
-  opacity: 0.55;
+  opacity: 0.68;
 }
 
 .orbital-ring::before,
@@ -856,17 +859,17 @@ button {
 }
 
 .orbital-ring-a {
-  right: -8rem;
-  bottom: -11rem;
-  width: 28rem;
-  height: 28rem;
+  right: -9rem;
+  bottom: -12rem;
+  width: 32rem;
+  height: 32rem;
 }
 
 .orbital-ring-b {
   left: -10rem;
-  bottom: -16rem;
-  width: 34rem;
-  height: 34rem;
+  bottom: -18rem;
+  width: 38rem;
+  height: 38rem;
   border-color: rgba(255, 255, 255, 0.06);
 }
 
@@ -893,14 +896,21 @@ button {
   height: 100%;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.02);
+  background:
+    linear-gradient(180deg, rgba(217, 119, 6, 0.055), transparent 42%),
+    rgba(255, 255, 255, 0.028);
   padding: 1rem;
   backdrop-filter: blur(12px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 28px rgba(0, 0, 0, 0.18);
 }
 
 .pipeline-card:hover {
-  border-color: rgba(217, 119, 6, 0.42);
-  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(217, 119, 6, 0.56);
+  background:
+    linear-gradient(180deg, rgba(217, 119, 6, 0.085), transparent 44%),
+    rgba(255, 255, 255, 0.045);
 }
 
 .pipeline-arrow {
@@ -908,14 +918,17 @@ button {
 }
 
 .input-chamber {
-  border: 1px solid rgba(217, 119, 6, 0.4);
+  border: 1px solid rgba(217, 119, 6, 0.54);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.02);
+  background:
+    linear-gradient(180deg, rgba(217, 119, 6, 0.065), rgba(255, 255, 255, 0.018) 26%),
+    rgba(7, 10, 16, 0.82);
   padding: 1.25rem;
   backdrop-filter: blur(12px);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.03),
-    0 0 15px rgba(217, 119, 6, 0.1);
+    0 0 22px rgba(217, 119, 6, 0.16),
+    0 16px 60px rgba(0, 0, 0, 0.28);
 }
 
 .input-chamber:focus-within {
@@ -968,7 +981,7 @@ button {
   justify-content: center;
   gap: 0.55rem;
   min-width: 9.5rem;
-  border: 1px solid rgba(217, 119, 6, 0.56);
+  border: 1px solid rgba(251, 191, 36, 0.58);
   border-radius: 4px;
   background: rgba(217, 119, 6, 0.92);
   padding: 0.78rem 1rem;
@@ -978,7 +991,7 @@ button {
   font-weight: 700;
   letter-spacing: 0.12em;
   box-shadow:
-    0 0 18px rgba(217, 119, 6, 0.18),
+    0 0 26px rgba(217, 119, 6, 0.26),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
@@ -999,9 +1012,14 @@ button {
 .terminal-table-shell {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.02);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.02);
   padding: 1.25rem;
   backdrop-filter: blur(12px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 18px 60px rgba(0, 0, 0, 0.22);
 }
 
 .terminal-stat {
@@ -1122,12 +1140,23 @@ button {
   .pipeline-arrow {
     position: absolute;
     top: 50%;
-    right: -0.2rem;
+    right: -0.12rem;
     display: block;
     transform: translateY(-50%);
-    color: rgba(217, 119, 6, 0.5);
+    color: rgba(217, 119, 6, 0.7);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-    font-size: 0.75rem;
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .hero-terminal {
+    min-height: auto;
+  }
+
+  .hero-wave {
+    height: 19rem;
+    opacity: 0.46;
   }
 }
 

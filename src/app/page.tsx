@@ -57,6 +57,39 @@ const FALLBACK_MEMES = [
     postCount: 6,
     chatCount: 4,
   },
+  {
+    id: 'vivid-demo-paraboil',
+    name: 'Paraboil',
+    ticker: 'BOIL',
+    tagline: 'A paranoid kettle forecasting every chart as steam.',
+    vibe: 'Chaotic enigma',
+    createdAt: '2026-04-17T00:02:00.000Z',
+    hasImages: true,
+    postCount: 3,
+    chatCount: 2,
+  },
+  {
+    id: 'vivid-demo-cryptid',
+    name: 'The Cryptid-1',
+    ticker: 'CRYP',
+    tagline: 'Seen only in low liquidity and bad screenshots.',
+    vibe: 'Chaotic enigma',
+    createdAt: '2026-04-17T00:04:00.000Z',
+    hasImages: false,
+    postCount: 2,
+    chatCount: 1,
+  },
+  {
+    id: 'vivid-demo-zenfrog',
+    name: 'Zenfrog',
+    ticker: 'ZFRG',
+    tagline: 'Ancient swamp wisdom for overleveraged timelines.',
+    vibe: 'Stable vivid',
+    createdAt: '2026-04-17T00:06:00.000Z',
+    hasImages: true,
+    postCount: 4,
+    chatCount: 3,
+  },
 ]
 
 interface MemeSummary {
@@ -371,8 +404,8 @@ export default function Home() {
         </div>
       )}
 
-      <div className="terminal-home space-y-12 pb-12">
-        <section className="hero-terminal relative overflow-hidden border border-white/10 px-5 py-12 sm:px-10 sm:py-16 lg:px-12">
+      <div className="terminal-home space-y-8 pb-12">
+        <section className="hero-terminal relative overflow-hidden border border-white/10 px-5 py-10 sm:px-8 lg:px-10">
           <HeroVisualization />
 
           <div className="relative z-10 mx-auto max-w-5xl text-center">
@@ -392,99 +425,82 @@ export default function Home() {
               visuals, Telegram behavior, Four.Meme launch copy, and BNB-chain soul proof.
             </p>
           </div>
-        </section>
 
-        <section className="pipeline-grid">
-          {PIPELINE_STEPS.map((step, index) => (
-            <div key={step.id} className="pipeline-wrap">
-              <div className="pipeline-card">
-                <div className="flex items-start justify-between gap-4">
-                  <span className="font-mono text-xs text-amber-500">[{step.id}]</span>
-                  <Icon name={step.icon} />
+          <div className="relative z-10 mx-auto mt-9 max-w-5xl">
+            <div className="pipeline-grid">
+              {PIPELINE_STEPS.map((step, index) => (
+                <div key={step.id} className="pipeline-wrap">
+                  <div className="pipeline-card">
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="font-mono text-xs text-amber-500">[{step.id}]</span>
+                      <Icon name={step.icon} />
+                    </div>
+                    <h2 className="mt-4 font-mono text-sm font-medium text-zinc-100">{step.title}</h2>
+                    <p className="mt-2 text-xs leading-6 text-zinc-400">{step.body}</p>
+                  </div>
+                  {index < PIPELINE_STEPS.length - 1 && <span className="pipeline-arrow">-&gt;</span>}
                 </div>
-                <h2 className="mt-4 font-mono text-sm font-medium text-zinc-100">{step.title}</h2>
-                <p className="mt-2 text-xs leading-6 text-zinc-400">{step.body}</p>
-              </div>
-              {index < PIPELINE_STEPS.length - 1 && <span className="pipeline-arrow">-&gt;</span>}
-            </div>
-          ))}
-        </section>
-
-        <section id="incubator" className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="input-chamber">
-            <div className="mb-4 flex items-center justify-between gap-4 border-b border-white/10 pb-3">
-              <p className="font-mono text-xs uppercase tracking-[0.18em] text-amber-500">Input chamber</p>
-              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-zinc-500">
-                {isTypingPrompt ? 'JetBrains Mono // typing' : 'JetBrains Mono // ready'}
-              </p>
+              ))}
             </div>
 
-            <textarea
-              value={concept}
-              onChange={e => setConcept(e.target.value)}
-              disabled={isGenerating}
-              placeholder=">>> Describe a meme-organism, paste a viral signal, or tune something internet weird..."
-              rows={5}
-              className="terminal-textarea"
-              onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  handleGenerate()
-                }
-              }}
-            />
-
-            <div className="mt-5 flex flex-col gap-4 border-t border-white/10 pt-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="space-y-2">
-                <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-zinc-500">
-                  Prompt snippets
+            <div id="incubator" className="input-chamber mx-auto mt-7 max-w-4xl">
+              <div className="mb-4 flex items-center justify-between gap-4 border-b border-white/10 pb-3">
+                <p className="font-mono text-xs uppercase tracking-[0.18em] text-amber-500">Input chamber</p>
+                <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-zinc-500">
+                  {isTypingPrompt ? 'JetBrains Mono // typing' : 'JetBrains Mono // ready'}
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {EXAMPLES.map(example => (
-                    <button
-                      key={example}
-                      onClick={() => typeSuggestion(example)}
-                      className="terminal-suggestion"
-                    >
-                      {example}
-                    </button>
-                  ))}
+              </div>
+
+              <textarea
+                value={concept}
+                onChange={e => setConcept(e.target.value)}
+                disabled={isGenerating}
+                placeholder=">>> Describe a meme-organism, paste a viral signal, or tune something internet weird..."
+                rows={4}
+                className="terminal-textarea"
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleGenerate()
+                  }
+                }}
+              />
+
+              <div className="mt-5 flex flex-col gap-4 border-t border-white/10 pt-4 lg:flex-row lg:items-end lg:justify-between">
+                <div className="space-y-2">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-zinc-500">
+                    Prompt snippets
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {EXAMPLES.map(example => (
+                      <button
+                        key={example}
+                        onClick={() => typeSuggestion(example)}
+                        className="terminal-suggestion"
+                      >
+                        {example}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                <button
+                  onClick={handleGenerate}
+                  disabled={!concept.trim() || isGenerating}
+                  className="terminal-execute"
+                >
+                  <span>{isGenerating ? 'EXECUTING' : 'EXECUTE'}</span>
+                  <BurstIcon />
+                </button>
               </div>
 
-              <button
-                onClick={handleGenerate}
-                disabled={!concept.trim() || isGenerating}
-                className="terminal-execute"
-              >
-                <span>{isGenerating ? 'EXECUTING' : 'EXECUTE'}</span>
-                <BurstIcon />
-              </button>
+              {error && (
+                <div className="mt-4 border border-red-500/25 bg-red-500/5 p-4">
+                  <p className="text-sm text-red-300">{error}</p>
+                </div>
+              )}
             </div>
-
-            {error && (
-              <div className="mt-4 border border-red-500/25 bg-red-500/5 p-4">
-                <p className="text-sm text-red-300">{error}</p>
-              </div>
-            )}
           </div>
-
-          <aside className="terminal-side-panel">
-            <p className="font-mono text-xs uppercase tracking-[0.18em] text-amber-500">Judge-safe route</p>
-            <h2 className="mt-3 text-xl font-semibold tracking-[-0.03em] text-zinc-100">Pandaudit is already alive.</h2>
-            <p className="mt-3 text-sm leading-7 text-zinc-400">
-              Use the seeded demo when recording: chat, visuals, posts, Telegram activation, export, and BNB proof are already staged.
-            </p>
-            <div className="mt-5 grid grid-cols-2 gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-zinc-400">
-              <div className="terminal-stat">BNB proof</div>
-              <div className="terminal-stat">3 visuals</div>
-              <div className="terminal-stat">Telegram</div>
-              <div className="terminal-stat">Export kit</div>
-            </div>
-            <Link href="/demo" className="terminal-demo-link">
-              [ OPEN DEMO ]
-            </Link>
-          </aside>
         </section>
 
         <section className="terminal-table-shell">
@@ -511,7 +527,7 @@ export default function Home() {
               </thead>
               <tbody>
                 {displayedMemes.map(meme => {
-                  const href = meme.id === 'vivid-demo-pandaudit' ? '/demo' : `/meme/${meme.id}`
+                  const href = meme.id.startsWith('vivid-demo-') ? '/demo' : `/meme/${meme.id}`
 
                   return (
                     <tr key={meme.id} className="border-b border-white/[0.06] hover:bg-white/[0.05]">
