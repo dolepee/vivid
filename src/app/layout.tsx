@@ -16,15 +16,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen antialiased">
-        <header className="sticky top-0 z-40 border-b border-white/5 bg-[#0d0906]/95 px-5 py-3">
-          <div className="mx-auto flex max-w-7xl items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="avatar-orb w-9 h-9 rounded-xl bg-[radial-gradient(circle_at_30%_30%,#fff1c7,#ffd76a_52%,#2b1806)] flex items-center justify-center text-[#241703] font-bold text-sm">
+        <header className="sticky top-0 z-40 border-b border-white/5 bg-[#0A0D14]/95 px-5 py-2.5 backdrop-blur-md">
+          <div className="mx-auto grid max-w-7xl grid-cols-[1fr_auto_1fr] items-center">
+            <Link href="/" className="flex items-center gap-2 justify-self-start">
+              <div className="flex h-7 w-7 items-center justify-center rounded-sm border border-amber-500/30 bg-amber-500 text-sm font-bold text-[#0A0D14] shadow-[0_0_18px_rgba(217,119,6,0.2)]">
                 V
               </div>
-              <span className="font-bold text-lg text-white">VIVID</span>
+              <span className="text-base font-bold tracking-[0.02em] text-zinc-100">VIVID</span>
             </Link>
-            <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em]">
+            <div className="flex items-center gap-2 justify-self-center font-mono text-xs uppercase tracking-[0.18em]">
               <Link href="/demo" className="nav-bracket">
                 Demo
               </Link>
@@ -35,6 +35,7 @@ export default function RootLayout({
                 Gallery
               </Link>
             </div>
+            <div aria-hidden="true" />
           </div>
         </header>
         <main className="mx-auto max-w-7xl px-5 py-8">
