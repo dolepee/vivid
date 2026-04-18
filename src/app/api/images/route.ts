@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     // directly. Each seed produces a different image deterministically.
     const urls = [0, 1, 2].map(i => {
       const seed = Math.floor(Math.random() * 1000000)
-      return `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&seed=${seed}&nologo=true&cacheBust=${Date.now()}-${i}`
+      return `https://image.pollinations.ai/prompt/${encoded}?width=768&height=768&seed=${seed}&nologo=true&cacheBust=${Date.now()}-${i}`
     })
 
     await setImages(memeId, urls)

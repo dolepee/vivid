@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { use, useEffect, useRef, useState } from 'react'
+import { type SyntheticEvent, use, useEffect, useRef, useState } from 'react'
 import { encodeFunctionData } from 'viem'
 import {
   BNB_TESTNET_PARAMS,
@@ -23,6 +23,8 @@ interface MemeData {
 
 type AvatarState = 'idle' | 'thinking' | 'rendering' | 'launch'
 
+const FOUR_MEME_CREATE_URL = 'https://four.meme/en/create-token'
+
 interface EthereumProvider {
   request(args: { method: string; params?: unknown[] }): Promise<unknown>
 }
@@ -35,6 +37,34 @@ declare global {
 
 function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+function withImageRetryParam(src: string, retry: number) {
+  try {
+    const url = new URL(src)
+    url.searchParams.set('vividRetry', `${Date.now()}-${retry}`)
+    return url.toString()
+  } catch {
+    const separator = src.includes('?') ? '&' : '?'
+    return `${src}${separator}vividRetry=${Date.now()}-${retry}`
+  }
+}
+
+function retryImageLoad(event: SyntheticEvent<HTMLImageElement>) {
+  const image = event.currentTarget
+  const retryCount = Number(image.dataset.retryCount || '0')
+
+  if (retryCount >= 3) {
+    image.dataset.failed = 'true'
+    return
+  }
+
+  const nextRetry = retryCount + 1
+  image.dataset.retryCount = String(nextRetry)
+
+  window.setTimeout(() => {
+    image.src = withImageRetryParam(image.src, nextRetry)
+  }, 450 * nextRetry)
 }
 
 function getPersonaFontClass(character: CharacterSpec) {
@@ -115,7 +145,13 @@ function PersonaAvatar({
       className={`avatar-orb avatar-breathe ${stateClass} ${size} flex items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_30%_30%,rgba(255,241,199,0.92),rgba(255,215,106,0.58)_52%,rgba(43,24,6,0.92))] font-semibold text-[#241703] ${textSize}`}
     >
       {imageUrl ? (
-        <img src={imageUrl} alt={`${character.name} avatar`} className="h-full w-full object-cover" />
+        <img
+          src={imageUrl}
+          alt={`${character.name} avatar`}
+          className="h-full w-full object-cover"
+          decoding="async"
+          onError={retryImageLoad}
+        />
       ) : (
         <span>{character.name.charAt(0)}</span>
       )}
@@ -182,6 +218,8 @@ function DeployModal({
                   src={selectedImage}
                   alt={`${character.name} selected`}
                   className="aspect-square w-full rounded-[18px] object-cover"
+                  decoding="async"
+                  onError={retryImageLoad}
                 />
               ) : (
                 <div className="flex aspect-square w-full items-center justify-center rounded-[18px] bg-[radial-gradient(circle_at_30%_30%,rgba(255,215,106,0.25),rgba(243,186,47,0.08),transparent_70%)] text-6xl font-semibold text-[#f3ba2f]">
@@ -202,7 +240,14 @@ function DeployModal({
                         : 'border-transparent hover:border-white/10'
                     }`}
                   >
-                    <img src={url} alt={`Preview ${index + 1}`} className="aspect-square w-full object-cover" />
+                    <img
+                      src={url}
+                      alt={`Preview ${index + 1}`}
+                      className="aspect-square w-full object-cover"
+                      loading="eager"
+                      decoding="async"
+                      onError={retryImageLoad}
+                    />
                   </button>
                 ))}
               </div>
@@ -246,7 +291,7 @@ function DeployModal({
                 Copy entire kit
               </button>
               <a
-                href="https://four.meme/create"
+                href={FOUR_MEME_CREATE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-primary btn-deploy flex-1 text-center"
@@ -312,11 +357,38 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
   }, [data?.chatHistory, showTypingIndicator, streamingReply])
 
   useEffect(() => {
-    setLoadedImages([])
-    if (data?.images.length) {
-      setSelectedImageIndex(current => Math.min(current, data.images.length - 1))
-    } else {
+    if (!data?.images.length) {
+      setLoadedImages([])
       setSelectedImageIndex(0)
+      return
+    }
+
+    let cancelled = false
+    setLoadedImages(prev => prev.filter(url => data.images.includes(url)))
+    setSelectedImageIndex(current => Math.min(current, data.images.length - 1))
+
+    data.images.forEach(url => {
+      const preload = (src: string, attempt = 0) => {
+        const image = new window.Image()
+        image.decoding = 'async'
+        image.onload = () => {
+          if (cancelled) return
+          setLoadedImages(prev => (prev.includes(url) ? prev : [...prev, url]))
+        }
+        image.onerror = () => {
+          if (cancelled || attempt >= 3) return
+          window.setTimeout(() => {
+            preload(withImageRetryParam(url, attempt + 1), attempt + 1)
+          }, 450 * (attempt + 1))
+        }
+        image.src = src
+      }
+
+      preload(url)
+    })
+
+    return () => {
+      cancelled = true
     }
   }, [data?.images])
 
@@ -1125,12 +1197,15 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
                       <img
                         src={avatarImage}
                         alt={`${character.name} selected visual`}
+                        loading="eager"
+                        decoding="async"
                         onLoad={() =>
                           avatarImage &&
                           setLoadedImages(prev =>
                             prev.includes(avatarImage) ? prev : [...prev, avatarImage]
                           )
                         }
+                        onError={retryImageLoad}
                         className={`image-focus aspect-square w-full rounded-[20px] object-cover ${
                           avatarImage && loadedImages.includes(avatarImage) ? 'image-focus-loaded' : ''
                         }`}
@@ -1153,9 +1228,12 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
                             <img
                               src={url}
                               alt={`${character.name} meme ${index + 1}`}
+                              loading="eager"
+                              decoding="async"
                               onLoad={() =>
                                 setLoadedImages(prev => (prev.includes(url) ? prev : [...prev, url]))
                               }
+                              onError={retryImageLoad}
                               className={`image-focus aspect-square w-full rounded-[14px] object-cover ${
                                 loaded ? 'image-focus-loaded' : ''
                               }`}
@@ -1259,6 +1337,9 @@ export default function MemePage({ params }: { params: Promise<{ id: string }> }
                       src={avatarImage}
                       alt={`${character.name} preview`}
                       className="aspect-square w-full rounded-[16px] object-cover"
+                      loading="eager"
+                      decoding="async"
+                      onError={retryImageLoad}
                     />
                   ) : (
                     <div className="flex aspect-square w-full items-center justify-center rounded-[16px] bg-[radial-gradient(circle_at_30%_30%,rgba(255,215,106,0.25),rgba(243,186,47,0.08),transparent_70%)] text-6xl font-semibold text-[#f3ba2f]">
